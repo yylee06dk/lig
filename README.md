@@ -9,7 +9,13 @@ So, using Golang (which has GC, which is crucial for jlox implementation), I dec
 
 Since, I want to feel the 'building up' process of a language, I will slice it up into stages. If I were to really implement a language of mine,
 I wouldn't start by defining the perfect EBNF that expresses the whole language. So, I'm starting small, then going to add more and more features to the bare bone.
+Also, this is the literal "first" project written in Golang, and the whole README will have my impressions on Golang, and the difference of transplanting the thought process
+made in Java to Go, which is quite different from the perspective of OOP.
 
 ### Stage 1. A calculator
 
-numbers, binary ops(+, -, *, /), and grouping is only we got for now. Also only REPLs work for now.
+numbers, binary ops(+, -, *, /) is only we got for now. Also only REPLs work for now.
+Exploring the Go's error reporting system, it is very nice. Only logging at the top level. This makes error reporting modularized in each function~package level, and reporting
+to the user is only done at the top level. A nice usage of the stack-like structure.
+Also, found out OOP naturally allows static global variables and I never knew it was a previlege. Without such object-ness, I should always give the source string(code) and
+the current position where I'm reading(in byte-level) to every functions in the scanner package.
