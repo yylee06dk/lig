@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"lig/scanner"
 )
 	
 func main() {
@@ -19,6 +20,18 @@ func main() {
 		fmt.Print("> ")
 		input, _ := reader.ReadString('\n')
 
-		fmt.Printf("Input: %s\n", input)
+		tokenSlice, err := scanner.ScanTokens(input[:len(input)-1])
+
+		if err != nil {
+			fmt.Println(err)
+			
+			fmt.Println("Until then, scanned this:")
+		}
+
+
+		for i, value := range tokenSlice {
+			fmt.Printf("%v: %+v ", i, value)
+		}
+		fmt.Println()
 	}
 }
