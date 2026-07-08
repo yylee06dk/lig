@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"lig/scanner"
+	"lig/parser"
 )
 	
 func main() {
@@ -26,12 +27,16 @@ func main() {
 			fmt.Println(err)
 			
 			fmt.Println("Until then, scanned this:")
+
+			for i, value := range tokenSlice {
+				fmt.Printf("%v: %+v ", i, value)
+			}
+			fmt.Println()
+			os.Exit(1)
 		}
 
+		expr := parser.Parse(tokenSlice)
 
-		for i, value := range tokenSlice {
-			fmt.Printf("%v: %+v ", i, value)
-		}
-		fmt.Println()
+		fmt.Printf("%+v]\n", expr)
 	}
 }

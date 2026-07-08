@@ -14,8 +14,17 @@ made in Java to Go, which is quite different from the perspective of OOP.
 
 ### Stage 1. A calculator
 
-numbers, binary ops(+, -, *, /) is only we got for now. Also only REPLs work for now.
+numbers, binary ops(+, -, *, /) is only we got for now. Also only REPLs work for now.  
+
+Notes on what I learned/felt on each stage of the interpreter
+
+Scanner : 
 Exploring the Go's error reporting system, it is very nice. Only logging at the top level. This makes error reporting modularized in each function~package level, and reporting
-to the user is only done at the top level. A nice usage of the stack-like structure.
+to the user is only done at the top level. A nice usage of the stack-like structure.  
 Also, found out OOP naturally allows static global variables and I never knew it was a previlege. Without such object-ness, I should always give the source string(code) and
-the current position where I'm reading(in byte-level) to every functions in the scanner package.
+the current position where I'm reading(in byte-level) to every functions in the scanner package. Of course, this can be fixed through structs and method recievers, but I wanted
+to try coding without them.
+
+Parser :
+Found out how the jlox's parser avoids the problem that normally occurs with right-recursive grammar. (ex. 1 - 2 - 3)
+
