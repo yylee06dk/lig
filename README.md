@@ -26,5 +26,11 @@ the current position where I'm reading(in byte-level) to every functions in the 
 to try coding without them.
 
 Parser :  
- Found out how the jlox's parser avoids the problem that normally occurs with right-recursive grammar. (ex. 1 - 2 - 3)
+ Found out how the jlox's parser avoids the problem that normally occurs with right-recursive grammar. (ex. 1 - 2 - 3)  
+ Also, found out when coding with techniques like recursive descent(for parser), we should carefully place incrementing codes. Best practice seems to
+be always trying the best to keep in a single level. In the code given, incrementing happens at the most lowest level(literal)(Also, this is the part
+where an actual expression is made)
+
+Interpreter : 
+
 
