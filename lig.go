@@ -19,6 +19,7 @@ func main() {
 
 
 	for {
+		// Take input
 		fmt.Print("> ")
 		input, readErr := reader.ReadString('\n')
 		if readErr != nil {
@@ -26,6 +27,7 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Scan it to token list
 		srcScanner = scanner.New(input)
 		tokenSlice, scanErr := srcScanner.ScanTokens()
 
@@ -38,16 +40,29 @@ func main() {
 				fmt.Printf("%v: %+v ", i, value)
 			}
 			fmt.Println()
-			os.Exit(1)
+			continue
 		}
 
+		fmt.Printf("Scan Result: ")
 		for _, value := range tokenSlice {
 			fmt.Printf("%+v ", value)
 		}
 		fmt.Println()
 
-		expr := parser.Parse(tokenSlice)
+		// Parse to AST
+		parser := parser.New(tokenSlice)
+		expr, parseErr := parser.Parse()
 
-		fmt.Printf("%+v]\n", expr)
+		if parseErr != nil {
+			fmt.Println(parseErr)
+			
+			fmt.Println("Until then, parsed this:")
+
+			fmt.Printf("%+v\n", expr)
+			continue
+		}
+
+		fmt.Printf("Parse Result: ")
+		fmt.Printf("%+v\n", expr)
 	}
 }

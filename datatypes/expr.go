@@ -1,7 +1,11 @@
 package datatypes
 
+import (
+	"fmt"
+)
+
 type Expr interface {
-	exprOnly() int
+	dummy()
 }
 
 type Binary struct {
@@ -10,14 +14,17 @@ type Binary struct {
 	Right Expr
 }
 
-func (_ Binary) exprOnly() int {
-	return 1
+func (b Binary) String() string {
+	return fmt.Sprintf("[ {%v} {%v} {%v} ]", b.Left, b.Operator, b.Right)
 }
 
 type Literal struct {
 	Value any
 }
 
-func (_ Literal) exprOnly() int {
-	return 1
+func (l Literal) String() string {
+	return fmt.Sprintf("num[%v]", l.Value)
 }
+
+func (_ Binary) dummy() {}
+func (_ Literal) dummy() {}

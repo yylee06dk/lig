@@ -23,12 +23,12 @@ func (s *Scanner) ScanTokens() ([]datatypes.Token, error) {
     for !s.isAtEnd() {
     	temp, err = s.scanToken()
     	if (err != nil) {
-    		break
+    		return res, fmt.Errorf("ScanError: %w", err)
     	}
     	res = append(res, temp)
     }
 
-    return res, err
+    return res, nil
 }
 
 type ScanError struct {
@@ -65,7 +65,7 @@ func (s *Scanner) scanToken() (datatypes.Token, error) {
 			if isDigit(c) {
 				res, numErr = s.number()
 				if numErr != nil {
-					return res, fmt.Errorf("ScanError: %w", numErr)
+					return res, numErr
 				}
 			} else {
 				return res, &ScanError{s.Src, s.cur, "Unexpected character"}

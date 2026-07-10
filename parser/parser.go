@@ -1,65 +1,116 @@
 package parser
 
 import (
+	"fmt"
 	"lig/datatypes"
 )
 
-func Parse(tokens []datatypes.Token) datatypes.Expr {
-	return expression(tokens, 0)
+// Top-level declaration.
+ 
+// Dummy Expression (for error returning)
+
+var dummy datatypes.Expr = datatypes.Literal{0}
+
+
+type Parser struct {
+	Tokens []datatypes.Token
+	cur int
 }
 
-func expression(tokens []datatypes.Token, cur int) datatypes.Expr {
-	return term(tokens, cur)
+func New(tokens []datatypes.Token) *Parser {
+	return &Parser{tokens, 0}
 }
 
-func term(tokens []datatypes.Token, cur int) datatypes.Expr {
-	left := factor(tokens, cur)
-	cur = advance(cur)
+func (p *Parser) Parse() (datatypes.Expr, error) {
+	res, err := p.expression()
+	if err != nil {
+		return res, fmt.Errorf("ParseError: %w", err)
+	}
+	return res, nil
+}
 
-	for !isAtEnd(tokens, cur) && (match(tokens, cur, datatypes.Sub) || match(tokens, cur, datatypes.Add)) {
-		operator := peek(tokens, cur)
-		cur = advance(cur)
-		right := factor(tokens, cur)
-		cur = advance(cur)
+type ParseError struct {
+	Source datatypes.Token
+	Msg string
+}
+
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("In token %v, Error occured: %s", e.Source, e.Msg)
+}
+
+func (p *Parser) expression() (datatypes.Expr, error) {
+	res, err := p.term()
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+func (p *Parser) term() (datatypes.Expr, error) {
+	left, leftErr := p.factor()
+	if leftErr != nil {
+		return dummy, leftErr
+	}
+
+	for !p.isAtEnd() && (p.match(datatypes.Sub) || p.match(datatypes.Add)) {
+		operator := p.previous()
+		right, rightErr := p.factor()
+		if rightErr != nil {
+			return left, rightErr
+		}
 		left = datatypes.Binary{left, operator.Type, right}
 	}
 
-	return left
+	return left, nil
 }
 
-func factor(tokens []datatypes.Token, cur int) datatypes.Expr {
-	var operator datatypes.Token
-	var right datatypes.Expr
-	left := literal(tokens, cur)
-	cur = advance(cur)
+func (p *Parser) factor() (datatypes.Expr, error) {
+	left, leftErr := p.literal()
+	if leftErr != nil {
+		return dummy, leftErr
+	}
 
-	for !isAtEnd(tokens, cur) && (match(tokens, cur, datatypes.Mult) || match(tokens, cur, datatypes.Div)) {
-		operator = peek(tokens, cur)
-		cur = advance(cur)
-		right = literal(tokens, cur)
-		cur = advance(cur)
-		left = datatypes.Binary{left, operator.Type, right}	}
+	for !p.isAtEnd() && (p.match(datatypes.Mult) || p.match(datatypes.Div)) {
+		operator := p.previous()
+		right, rightErr := p.literal()
+		if rightErr != nil {
+			return left, rightErr
+		}
+		left = datatypes.Binary{left, operator.Type, right}
+	}
 
-	return left
+	return left, nil
 }
 
-func literal(tokens []datatypes.Token, cur int) datatypes.Expr {
-	return datatypes.Literal{peek(tokens, cur).Value}
+func (p *Parser) literal() (datatypes.Expr, error) {
+	if !p.isAtEnd() && p.match(datatypes.Number) {
+		return datatypes.Literal{p.previous().Value}, nil
+	} else {
+		return dummy, &ParseError{p.previous(), fmt.Sprintf("Expected literal, received %v", p.peek())}
+	}
 }
 
-func advance(cur int) int {
-	return cur+1
+func (p *Parser) advance() datatypes.Token {
+	p.cur += 1
+	return p.Tokens[p.cur - 1]
 }
 
-func isAtEnd(tokens []datatypes.Token, cur int) bool {
-	return len(tokens) <= cur
+func (p *Parser) isAtEnd() bool {
+	return len(p.Tokens) <= p.cur
 }
 
-func peek(tokens []datatypes.Token, cur int) datatypes.Token {
-	return tokens[cur]
+func (p *Parser) peek() datatypes.Token {
+	return p.Tokens[p.cur]
 }
 
-func match(tokens []datatypes.Token, cur int, expectType datatypes.Tokentype) bool {
-	if peek(tokens, cur).Type == expectType { return true }
+func (p *Parser) previous() datatypes.Token {
+	return p.Tokens[p.cur-1]
+}
+
+func (p *Parser) match(expectType datatypes.Tokentype) bool {
+	if p.peek().Type == expectType {
+		p.cur += 1 
+		return true
+	}
 	return false
 }
