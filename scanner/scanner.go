@@ -6,20 +6,26 @@ import (
 	"strconv"
 )
 
-func ScanTokens(source string) ([]datatypes.Token, error) {
+type Scanner struct {
+	Src string
+	cur int
+}
+
+func New(source string) *Scanner {
+	return &Scanner{source, 0}
+}
+
+func (s *Scanner) ScanTokens() ([]datatypes.Token, error) {
     var res []datatypes.Token
     var temp datatypes.Token
-    var start int
     var err error
-    var current int
 
-    for !isAtEnd(source, current) {
-    	temp, start, err = scanToken(source, current)
+    for !s.isAtEnd() {
+    	temp, err = s.scanToken()
     	if (err != nil) {
     		break
     	}
     	res = append(res, temp)
-    	current = start
     }
 
     return res, err
@@ -35,16 +41,16 @@ func (e *ScanError) Error() string {
 	return fmt.Sprintf("In position %v in source [%s], error occured: %s\n", e.Pos, e.Source, e.Msg)
 }
 
-func isAtEnd(source string, current int) bool  {
-	return len(source) <= current
+func (s *Scanner) isAtEnd() bool  {
+	return len(s.Src) <= s.cur
 }
 
 
-func scanToken(source string, start int) (datatypes.Token, int, error) {
+func (s *Scanner) scanToken() (datatypes.Token, error) {
 	var res datatypes.Token
-	current := start
+	var numErr error
 
-	c, current := advance(source, current)
+	c := s.advance()
 
 	switch c {
 		case '+':
@@ -57,49 +63,53 @@ func scanToken(source string, start int) (datatypes.Token, int, error) {
 			res = datatypes.Token{datatypes.Div, 0}
 		default:
 			if isDigit(c) {
-				res, current = number(source, current)
+				res, numErr = s.number()
+				if numErr != nil {
+					return res, fmt.Errorf("ScanError: %w", numErr)
+				}
 			} else {
-				return res, -1, &ScanError{source, current, "Unexpected character"}
+				return res, &ScanError{s.Src, s.cur, "Unexpected character"}
 			}
 	}
 
-	return res, skipWhitespace(source, current), nil
+	s.skipWhitespace()
+	return res, nil
 }
 
-func skipWhitespace(source string, start int) int {
-	current := start
-	for !isAtEnd(source, current) &&  isWhitespace(source, current) {
-		current += 1
+func (s *Scanner) skipWhitespace() {
+	for !s.isAtEnd() &&  s.isWhitespace() {
+		s.cur += 1
 	}
-	return current
 }
 
-func isWhitespace(source string, current int) bool {
-	return (source[current] == ' ' || source[current] == '\n' || source[current] == '\t')
+func (s *Scanner) isWhitespace() bool {
+	return (s.Src[s.cur] == ' ' || s.Src[s.cur] == '\n' || s.Src[s.cur] == '\t')
 }
 
-func number(source string, start int) (datatypes.Token, int) {
-	current := start
-	
-	for !isAtEnd(source, current) {
-		if isDigit(peek(source, current)) {
-			_, current = advance(source, current)
-		} else { break }
+func (s *Scanner) number() (datatypes.Token, error) {
+	start := s.cur-1
+	for !s.isAtEnd() && isDigit(s.peek()) {
+		s.cur += 1
 	}
 
-	num, _ := strconv.Atoi(source[start-1:current])
+	num, atoiErr := strconv.Atoi(s.Src[start:s.cur])
 
-	return datatypes.Token{datatypes.Number, num}, current
+	if(atoiErr != nil) {
+		return datatypes.Token{datatypes.Number, 0}, fmt.Errorf("Failed to parse string to int: %w", atoiErr)
+	}
+
+	return datatypes.Token{datatypes.Number, num}, nil
 }
 
-func peek(source string, current int) (byte) {
-	return source[current]
+func (s *Scanner) peek() byte {
+	return s.Src[s.cur]
 }
 
 func isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
-func advance(source string, current int) (byte, int) {
-	return source[current], current+1
+func (s *Scanner) advance() byte {
+	s.cur += 1
+	return s.Src[s.cur-1]
 }

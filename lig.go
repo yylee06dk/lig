@@ -15,16 +15,22 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
+	var srcScanner *scanner.Scanner
 
 
 	for {
 		fmt.Print("> ")
-		input, _ := reader.ReadString('\n')
+		input, readErr := reader.ReadString('\n')
+		if readErr != nil {
+			fmt.Println("ReadError: %w", readErr)
+			os.Exit(1)
+		}
 
-		tokenSlice, err := scanner.ScanTokens(input[:len(input)-1])
+		srcScanner = scanner.New(input)
+		tokenSlice, scanErr := srcScanner.ScanTokens()
 
-		if err != nil {
-			fmt.Println(err)
+		if scanErr != nil {
+			fmt.Println(scanErr)
 			
 			fmt.Println("Until then, scanned this:")
 
@@ -34,6 +40,11 @@ func main() {
 			fmt.Println()
 			os.Exit(1)
 		}
+
+		for _, value := range tokenSlice {
+			fmt.Printf("%+v ", value)
+		}
+		fmt.Println()
 
 		expr := parser.Parse(tokenSlice)
 
