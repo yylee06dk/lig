@@ -26,6 +26,11 @@ func (p *Parser) Parse() (datatypes.Expr, error) {
 	if err != nil {
 		return res, fmt.Errorf("ParseError: %w", err)
 	}
+
+	if p.peek().Type != datatypes.EOF {
+		endErr := &ParseError{p.peek(), fmt.Sprintf("Expected EOF, received %v", p.peek())}
+		return res, fmt.Errorf("ParseError: %w", endErr)
+	}
 	return res, nil
 }
 
@@ -96,7 +101,8 @@ func (p *Parser) advance() datatypes.Token {
 }
 
 func (p *Parser) isAtEnd() bool {
-	return len(p.Tokens) <= p.cur
+	// Due to EOF token
+	return len(p.Tokens) - 1 <= p.cur
 }
 
 func (p *Parser) peek() datatypes.Token {

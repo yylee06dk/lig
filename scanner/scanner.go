@@ -28,6 +28,9 @@ func (s *Scanner) ScanTokens() ([]datatypes.Token, error) {
     	res = append(res, temp)
     }
 
+    // input line terminated without leftover stuffs
+    res = append(res, datatypes.Token{datatypes.EOF, 0})
+
     return res, nil
 }
 

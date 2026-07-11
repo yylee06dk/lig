@@ -13,6 +13,7 @@ const (
 	Mult
 	Div
 	Group
+	EOF
 )
 
 func (t Tokentype) String() string {
@@ -29,6 +30,8 @@ func (t Tokentype) String() string {
 		return "/"
 	case Group:
 		return "group"
+	case EOF:
+		return "EOF"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}
