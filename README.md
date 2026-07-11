@@ -36,4 +36,6 @@ So, I added a check of EOF before terminating the parse process, so when such is
 Interpreter : 
  With type switches, I could easily make a functional, ML-like approach. It just felt like pattern matching since using `v := expr.(type)` just
 casted the desired subtype automatically.
+ Also, for future convenience, decided to return any type values. Found out go has a nice tools to deal with any types such as type switches and
+type assertions. 
 
