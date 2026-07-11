@@ -5,21 +5,21 @@ import (
 	"lig/datatypes"
 )
 
-var dummy int
+var dummy any
 
-func Interpret(expr datatypes.Expr) (int, error) {
+func Interpret(expr datatypes.Expr) (any, error) {
 	switch v := expr.(type) {
 		case datatypes.Binary:
 			res, err := binary(v)
 			if err != nil {
-				return dummy, fmt.Errorf("InterpError: %w", err)
+				return dummy, fmt.Errorf("RuntimeError: %w", err)
 			}
 			return res, nil
 
 		case datatypes.Literal:
 			res, err := literal(v)
 			if err != nil {
-				return dummy, fmt.Errorf("InterpError: %w", err)
+				return dummy, fmt.Errorf("RuntimeError: %w", err)
 			}
 			return res, nil
 
@@ -29,16 +29,16 @@ func Interpret(expr datatypes.Expr) (int, error) {
 	}
 }
 
-type InterpError struct {
+type RuntimeError struct {
 	CurExpr datatypes.Expr
 	Msg string
 }
 
-func (e *InterpError) Error() string {
+func (e *RuntimeError) Error() string {
 	return fmt.Sprintf("In expression %v, error occured: %s", e.CurExpr, e.Msg)
 }
 
-func binary(expr datatypes.Binary) (int, error) {
+func binary(expr datatypes.Binary) (any, error) {
 	operator := expr.Operator
 
 	left, leftErr := Interpret(expr.Left)
@@ -51,34 +51,41 @@ func binary(expr datatypes.Binary) (int, error) {
 		return dummy, rightErr
 	}
 
-	// Need to implement runtime error check
-	//left, right = runtimeCheck(left, right)
+	leftVal, rightVal, runtimeErr := runtimeCheck(left, right, expr)
+	if runtimeErr != nil {
+		
+	}
 
 	switch operator {
 		case datatypes.Add:
-			return left + right, nil
+			return leftVal + rightVal, nil
 		case datatypes.Sub:
-			return left - right, nil
+			return leftVal - rightVal, nil
 		case datatypes.Mult:
-			return left * right, nil
+			return leftVal * rightVal, nil
 		case datatypes.Div:
-			return left / right, nil
+			return leftVal / rightVal, nil
 		default:
 			// Temporary fix
-			return 0, nil
+			return dummy, nil
 	}
 }
-/*
-func runtimeCheck(left any, right any) (int, int){
-	return left, right
-}
-*/
 
-func literal(expr datatypes.Literal) (int, error) {
+func runtimeCheck(left any, right any, expr datatypes.Binary) (int, int, error){
+	leftVal, okLeft := left.(int)
+	rightVal, okRight := right.(int)
+	if !okLeft || !okRight {
+		return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of int, received: %T, %T", expr.Operator, left, right)}
+	}
+	return leftVal, rightVal, nil
+}
+
+
+func literal(expr datatypes.Literal) (any, error) {
 	switch v := expr.Value.(type) {
 		case int:
 			return v, nil
 		default:
-			return 0, &InterpError{expr, "Expected type int."}
+			return 0, &RuntimeError{expr, fmt.Sprintf("Expected type int, received type: %T", v)}
 	}
 }

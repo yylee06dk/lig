@@ -6,7 +6,7 @@ import (
 
 type Token struct {
 	Type Tokentype
-	Value int
+	Value any
 }
 
 func (t Token) String() string {

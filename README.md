@@ -30,7 +30,10 @@ Parser :
  Also, found out when coding with techniques like recursive descent(for parser), we should carefully place incrementing codes. Best practice seems to
 be always trying the best to keep in a single level. In the code given, incrementing happens at the most lowest level(literal)(Also, this is the part
 where an actual expression is made)
+ Hmm. The parser I coded from the book in chapter 6 doesn't seem to report issues of parsing 1 + 2 8 3. It just interprets 1 + 2 then ends it.
+So, I added a check of EOF before terminating the parse process, so when such issue happens, error is reported
 
 Interpreter : 
-
+ With type switches, I could easily make a functional, ML-like approach. It just felt like pattern matching since using `v := expr.(type)` just
+casted the desired subtype automatically.
 
