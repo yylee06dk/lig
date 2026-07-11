@@ -6,6 +6,7 @@ import (
 	"os"
 	"lig/scanner"
 	"lig/parser"
+	"lig/interpreter"
 )
 	
 func main() {
@@ -64,5 +65,13 @@ func main() {
 
 		fmt.Printf("Parse Result: ")
 		fmt.Printf("%+v\n", expr)
+
+		// Interpret AST to value
+		resVal, interpErr := interpreter.Interpret(expr)
+		if interpErr != nil {
+			fmt.Println(interpErr)
+			continue
+		}
+		fmt.Printf("Interpret Result: %v\n", resVal)
 	}
 }
