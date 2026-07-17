@@ -44,7 +44,7 @@ type ScanError struct {
 
 func (e *ScanError) Error() string {
 	return fmt.Sprintf("In position %v in source [%s], error occured: %s\n", e.Pos, e.Source, e.Msg)
-	// This is excessive. Deal such errors at top level.
+	// This is excessive. Deal such errors at top level. Is it? Not sure yet..
 }
 
 func (s *Scanner) isAtEnd() bool  {
@@ -56,6 +56,7 @@ func (s *Scanner) isAtEnd() bool  {
 func (s *Scanner) scanToken() (dt.Token, error) {
 	var res dt.Token
 
+	s.skipWhitespace()
 	c := s.advance()
 
 	switch c {
