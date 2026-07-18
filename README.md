@@ -81,4 +81,74 @@ I will implement strings with Golang's strings for now. But later on, maybe in a
 Notes on what I learned/felt while coding LIG
 
 ###### Scanner
+Adding new tokens to the scanner was relatively easy. Tried out testing, and unit testing was easy to try out, but I immediately found
+out that a great test table is where the real value comes from. It's hard to make a good test table for every scanning rule and edge cases
+
+###### Parser
+Before starting with the parser, we should definitely take a look at the grammar. When reading the book, the first place I bumped into
+was the abstract grammar using BNF. I understand that we parse by "less-bonding" or lower precedence to "strongly-bonding" or higher precedence
+because that's how it should work. But the real question was, where did the precedence first come from. As a person who's first language
+is C, the given precedence seems intuitive. But I'm definitely sure, that it wasn't **that** intuitive back in the 80s. So I decided to
+build up my own precedence.
+
+###### Keypoints of my precedence :
+Since we're currently building a dynamic language, let's reduce runtime errors
+And, make it seem intuitive as possible. (The judge of intuitive-ness is me!)
+
+Operators we have: +, -, *, /, ++, !, != , =, ==, >, >=, <, <=, &&, ||
+Of course some operators like =, &&, || are not implemented in this stage, so we will skip for now
+
+first let's look at some intuitive ones.
++, - have same precedence and it is lower than *, / (basic math)
+
+Also, for >, >=, <, <=(the comparison operators) we need to remark that
+they do not chain (like 1 + 2 + 3). Chaining these operators will end up in a
+quite weird state since calculating one side will return a boolean value and
+boolean values are not comparable(we can make it so, but it wouldn't be a intuitive one)
+So, let's first group them with a name `compops`, with `compops -> ">" | ">=" | "<" | "<="`
+
+Now we need to actually decide which one has higher precedence
+First, let's compare == with `compops`.
+
+Look at `a == b <= c` where a,b,c are any-type values.
+== or `compops` are binary operators who spit out a boolean value. == can have boolean values as operands, but
+`compops` cannot. So, by our thought of reducing runtime errors, we should give `compops` higher precedence
+
+Look at `a <= b + c` where a,b,c are any-type values.
+Also, with the same logic, we see that `(+)` operator takes(also `(-)`) integer operands only.
+But the comparison doesn't. So we should give `(+)` higher precedence.
+
+Look at `!a + b` where a, b are any-type values.
+This is where I thought about it alot. For intuitive grammar it is better to give unary operators higher precedence.
+But, with reducing runtime errors we see that no one will try to write `{boolean} + {int}`.
+Then, if we look at `-a + b`, it is much better to think of it as `(-a) + b`
+So, despite the risk of `!` operator, we place it below plus/minus operators
+
+The same applies to the mult/div operators
+
+The current precedence is like so:
+`Expression -> Equality -> Comparison -> Term -> Factor -> Unary -> Primary` (Here Primary means true, false, literals, identifiers)
+
+Now we need to find a place to squeeze in the `++` operator. (I did regret a bit adding this operator and not using overloading)
+
+Looking at `a ++ b < c` shows that it is better to have higher precedence than comparison operators
+
+So, now looking at `a ++ b + c`, it just didn't make sense. Such code will 100% spit out a runtime error since `lig` is a dynamic language, but
+the host language, `Golang` is not. So, for my personal intuition, I decided it to have higher precedence than plus/minus operators.
+
+So, we have the final precedence, so let's right the grammar rules out.
+
+```
+expression -> equality
+eqaulity -> comparison ("==" | "!=") equality | comparison
+comparison -> term compops term | term   //  Where compops -> ">" | ">=" | "<" | "<="
+term -> concat ("+" | "-") term | concat
+concat -> factor "++" concat | factor // This does feel really weird
+factor -> primary ("*" | "/") factor | primary
+primary -> "true" | "false" | Number | String | Identifier
+```
+
+We see that all rules are right-recursive (except for comparison where we cannot chain the operators) since we are going to use a
+recursive descent parser which needs to parse from the left. So, we should be able to parse the "left-part" then parse the rest.
+But, using left-recursive grammar, we cannot deal with parsing the "left-part". So, right-recursion is key in the grammar
 
