@@ -152,3 +152,5 @@ We see that all rules are right-recursive (except for comparison where we cannot
 recursive descent parser which needs to parse from the left. So, we should be able to parse the "left-part" then parse the rest.
 But, using left-recursive grammar, we cannot deal with parsing the "left-part". So, right-recursion is key in the grammar
 
+Addressing the grammar was quite of a pain(Since I read the book once, I passed the real pain of amibiguity and more)
+But, after the grammar was given, the implementing the parser was so easy.

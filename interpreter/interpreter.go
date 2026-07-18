@@ -24,8 +24,7 @@ func Interpret(expr datatypes.Expr) (any, error) {
 			return res, nil
 
 		default:
-			// Temporary solve
-			return dummy, nil
+			return dummy, &RuntimeError{expr, fmt.Sprintf("RuntimeError: Unexpected expression")}
 	}
 }
 
@@ -53,7 +52,7 @@ func binary(expr datatypes.Binary) (any, error) {
 
 	leftVal, rightVal, runtimeErr := runtimeCheck(left, right, expr)
 	if runtimeErr != nil {
-		
+		return dummy, runtimeErr
 	}
 
 	switch operator {
@@ -66,8 +65,7 @@ func binary(expr datatypes.Binary) (any, error) {
 		case datatypes.Div:
 			return leftVal / rightVal, nil
 		default:
-			// Temporary fix
-			return dummy, nil
+			return dummy, &RuntimeError{expr, fmt.Sprintf("Unknown Operator: [%v]", operator)}
 	}
 }
 

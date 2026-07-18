@@ -72,6 +72,8 @@ func (t Tokentype) String() string {
 		return "!="
 	case Equal:
 		return "="
+	case EqualEqual:
+		return "=="
 	case Greater:
 		return ">"
 	case GreaterEqual:

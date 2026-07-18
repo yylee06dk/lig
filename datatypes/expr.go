@@ -23,7 +23,14 @@ type Literal struct {
 }
 
 func (l Literal) String() string {
-	return fmt.Sprintf("num[%v]", l.Value)
+	switch v := l.Value.(type){
+		case int:
+			return fmt.Sprintf("num[%v]", l.Value)
+		case string:
+			return v
+		default:
+			return fmt.Sprintf("UnknownLiteral: %v",l. Value)
+	}
 }
 
 func (_ Binary) dummy() {}
