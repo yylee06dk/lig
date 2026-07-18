@@ -27,7 +27,7 @@ func (l Literal) String() string {
 		case int:
 			return fmt.Sprintf("num[%v]", l.Value)
 		case string:
-			return v
+			return fmt.Sprintf("string[%s]", v)
 		default:
 			return fmt.Sprintf("UnknownLiteral: %v",l. Value)
 	}

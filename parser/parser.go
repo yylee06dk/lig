@@ -102,7 +102,6 @@ func (p *Parser) term() (dt.Expr, error) {
 		}
 		left = dt.Binary{left, operator.Type, right}
 	}
-	fmt.Println(left)
 
 	return left, nil
 }
@@ -113,7 +112,7 @@ func (p *Parser) concat() (dt.Expr, error) {
 		return dummy, leftErr
 	}
 
-	for !p.isAtEnd() && (p.match(dt.Mult) || p.match(dt.Div)) {
+	for !p.isAtEnd() && p.match(dt.AddAdd) {
 		operator := p.previous()
 		right, rightErr := p.factor()
 		if rightErr != nil {

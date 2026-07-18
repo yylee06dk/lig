@@ -170,6 +170,7 @@ func (s *Scanner) number() (dt.Token, error) {
 
 func (s *Scanner) string() (dt.Token, error) {
 	start := s.cur // right after "
+
 	for !s.isAtEnd() && (s.peek() != '"') {
 		_ = s.advance()
 	}
@@ -179,6 +180,7 @@ func (s *Scanner) string() (dt.Token, error) {
 	if s.isAtEnd() {
 		return dummy, &ScanError{s.Src, s.cur, fmt.Sprintf("Unterminated string: %s", stringVal)}
 	}
+	_ = s.advance()
 
 	return dt.Token{dt.String, stringVal}, nil
 }
