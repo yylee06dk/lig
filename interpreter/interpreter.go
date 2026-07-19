@@ -142,13 +142,12 @@ func binary(expr dt.Binary) (any, error) {
 
 func literal(expr dt.Literal) (any, error) {
 	switch v := expr.Value.(type) {
-		case int:
-		case string:
+		case int, string:
 			return v, nil
 		default:
 			return 0, &RuntimeError{expr, fmt.Sprintf("Expected type int or string, received type: %T", v)}
 	}
-	return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
+	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
 
 func unary(expr dt.Unary) (any, error) {
@@ -168,8 +167,10 @@ func unary(expr dt.Unary) (any, error) {
 			return -rightVal, nil
 		case dt.Bang:
 			return !isTruthy(rightVal), nil
+		default:
+			return dummy, &RuntimeError{expr, fmt.Sprintf("Unrechable, or you maybe added another unary operator: %v", expr)}
 	}
-	return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in unary: %v", expr)}
+	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in unary: %v", expr)}
 }
 
 func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
@@ -177,10 +178,7 @@ func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
 	var rightVal any
 
 	switch expr.Operator {
-		case dt.Add:
-		case dt.Sub:
-		case dt.Mult:
-		case dt.Div:
+		case dt.Add, dt.Sub, dt.Mult, dt.Div:
 			ltemp, okLeft := left.(int)
 			rtemp, okRight := right.(int)
 			if !okLeft || !okRight {
@@ -190,13 +188,7 @@ func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
 			leftVal = ltemp
 			rightVal = rtemp
 
-		case dt.AddAdd:
-		case dt.BangEqual:
-		case dt.EqualEqual:
-		case dt.Greater:
-		case dt.GreaterEqual:
-		case dt.Less:
-		case dt.LessEqual:
+		case dt.AddAdd, dt.BangEqual, dt.EqualEqual, dt.Greater, dt.GreaterEqual, dt.Less, dt.LessEqual:
 			ltempInt, okLeft := left.(int)
 			rtempInt, okRight := right.(int)
 			if !okLeft || !okRight {
