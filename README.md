@@ -159,3 +159,10 @@ But, after the grammar was given, the implementing the parser was so easy.
 ###### Interpreter
 Again, it was quite easy to deal with, but the go's type assertion was a bit of a pain, but it was doable, and still an enjoyable process.
 Also, learned how Go deals with return statements especially mixed with switch statements. It seems safe and robust.
+
+Learned what an **interface** really is... I first found the go's interface a bit confusing, especially with value receivers and pointer receivers. And
+kept on trying to pass pointers to interfaces with the type `*datatypes.Expr` which is soooo wrong. This is a pointer to a interface. So, we cannot use polymorphism.
+Rather, just `datatypes.Expr` alone means that every type that implements this interface. And using pointer receivers, we implement the interface with pointer types.
+So, `datatypes.Expr` works as a big set of `*datatypes.Binary`, `*datatypes.Unary`, `*datatypes.Literal`. (Here, it is not weird to have the pointer since they are structs not interfaces)
+With this understood, changing the code was so easier.
+And now, I have a blazingly fast interpreter(compared to the before one)
