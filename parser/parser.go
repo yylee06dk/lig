@@ -9,7 +9,7 @@ import (
  
 // Dummy Expression (for error returning)
 
-var dummy dt.Expr = dt.Literal{0}
+var dummy dt.Expr = &dt.Literal{0}
 
 
 type Parser struct {
@@ -22,7 +22,7 @@ func New(tokens []dt.Token) *Parser {
 }
 
 func (p *Parser) Parse() (dt.Expr, error) {
-	if len(p.Tokens) == 1 { return dt.End{}, nil }
+	if len(p.Tokens) == 1 { return &dt.End{}, nil }
 	res, err := p.expression()
 	if err != nil {
 		return res, fmt.Errorf("ParseError: %w", err)
@@ -64,7 +64,7 @@ func (p *Parser) equality() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator.Type, right}
 	}
 
 	return left, nil
@@ -83,7 +83,7 @@ func (p *Parser) comparison() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator.Type, right}
 	}
 
 	return left, nil
@@ -101,7 +101,7 @@ func (p *Parser) term() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator.Type, right}
 	}
 
 	return left, nil
@@ -119,7 +119,7 @@ func (p *Parser) concat() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator.Type, right}
 	}
 
 	return left, nil
@@ -137,7 +137,7 @@ func (p *Parser) factor() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator.Type, right}
 	}
 
 	return left, nil
@@ -150,7 +150,7 @@ func (p *Parser) unary() (dt.Expr, error) {
 		if rightErr != nil {
 			return dummy, rightErr
 		}
-		right = dt.Unary{operator.Type, right}
+		right = &dt.Unary{operator.Type, right}
 		return right, nil
 	}
 
@@ -167,9 +167,9 @@ func (p *Parser) primary() (dt.Expr, error) {
 		return dummy, &ParseError{p.previous(), "Expected literal, received nothing"}
 	}
 	if p.match(dt.Number) {
-		return dt.Literal{p.previous().Value}, nil
+		return &dt.Literal{p.previous().Value}, nil
 	} else if p.match(dt.String) {
-		return dt.Literal{p.previous().Value}, nil
+		return &dt.Literal{p.previous().Value}, nil
 	} else {
 		return dummy, &ParseError{p.previous(), fmt.Sprintf("Expected literal, received %v", p.peek())}
 	}

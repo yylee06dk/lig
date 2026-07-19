@@ -25,15 +25,15 @@ type Unary struct {
 	Right Expr
 }
 
-func (e End) String() string {
+func (e *End) String() string {
 	return fmt.Sprintf("END")
 }
 
-func (b Binary) String() string {
+func (b *Binary) String() string {
 	return fmt.Sprintf("[ {%v} {%v} {%v} ]", b.Left, b.Operator, b.Right)
 }
 
-func (l Literal) String() string {
+func (l *Literal) String() string {
 	switch v := l.Value.(type){
 		case int:
 			return fmt.Sprintf("num[%v]", l.Value)
@@ -44,11 +44,11 @@ func (l Literal) String() string {
 	}
 }
 
-func (u Unary) String() string {
+func (u *Unary) String() string {
 	return fmt.Sprintf("[ {%v} {%v} ]", u.Operator, u.Right)
 }
 
-func (_ End) dummy() {}
-func (_ Binary) dummy() {}
-func (_ Literal) dummy() {}
-func (_ Unary) dummy() {}
+func (_ *End) dummy() {}
+func (_ *Binary) dummy() {}
+func (_ *Literal) dummy() {}
+func (_ *Unary) dummy() {}

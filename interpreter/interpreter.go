@@ -9,18 +9,19 @@ import (
 var dummy any
 
 func Interpret(expr dt.Expr) (any, error) {
-	if (expr == dt.End{}) {
+	if _, ok := expr.(*dt.End); ok {
 		return nil, nil
-	}
+	} 
+
 	switch v := expr.(type) {
-		case dt.Binary:
+		case *dt.Binary:
 			res, err := binary(v)
 			if err != nil {
 				return dummy, fmt.Errorf("RuntimeError: %w", err)
 			}
 			return res, nil
 
-		case dt.Literal:
+		case *dt.Literal:
 			// Need to deal with keywords
 			res, err := literal(v)
 			if err != nil {
@@ -28,7 +29,7 @@ func Interpret(expr dt.Expr) (any, error) {
 			}
 			return res, nil
 
-		case dt.Unary:
+		case *dt.Unary:
 			res, err := unary(v)
 			if err != nil {
 				return dummy, fmt.Errorf("RuntimeError: %w", err)
@@ -36,7 +37,7 @@ func Interpret(expr dt.Expr) (any, error) {
 			return res, nil
 
 		default:
-			return dummy, &RuntimeError{expr, fmt.Sprintf("RuntimeError: Unexpected expression")}
+			return dummy, &RuntimeError{&dt.Literal{0}, fmt.Sprintf("RuntimeError: Unexpected expression")}
 	}
 }
 
@@ -49,7 +50,7 @@ func (e *RuntimeError) Error() string {
 	return fmt.Sprintf("In expression %v, error occured: %s", e.CurExpr, e.Msg)
 }
 
-func binary(expr dt.Binary) (any, error) {
+func binary(expr *dt.Binary) (any, error) {
 	operator := expr.Operator
 
 	left, leftErr := Interpret(expr.Left)
@@ -88,6 +89,28 @@ func binary(expr dt.Binary) (any, error) {
 			leftVal := leftVal.(int)
 			rightVal := rightVal.(int)
 			return leftVal / rightVal, nil
+		case dt.BangEqual:
+			temp, leftOk := leftVal.(int)
+			if !leftOk {
+				leftVal := leftVal.(string)
+				rightVal := rightVal.(string)
+				return strings.Compare(leftVal, rightVal) == 1, nil
+			} else {
+				rightVal := rightVal.(int)
+
+				return temp != rightVal, nil
+			}
+		case dt.EqualEqual:
+			temp, leftOk := leftVal.(int)
+			if !leftOk {
+				leftVal := leftVal.(string)
+				rightVal := rightVal.(string)
+				return strings.Compare(leftVal, rightVal) == 1, nil
+			} else {
+				rightVal := rightVal.(int)
+
+				return temp == rightVal, nil
+			}
 		case dt.Greater:
 			temp, leftOk := leftVal.(int)
 			if !leftOk {
@@ -140,7 +163,7 @@ func binary(expr dt.Binary) (any, error) {
 	}
 }
 
-func literal(expr dt.Literal) (any, error) {
+func literal(expr *dt.Literal) (any, error) {
 	switch v := expr.Value.(type) {
 		case int, string:
 			return v, nil
@@ -150,7 +173,7 @@ func literal(expr dt.Literal) (any, error) {
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
 
-func unary(expr dt.Unary) (any, error) {
+func unary(expr *dt.Unary) (any, error) {
 	right, rightErr := Interpret(expr.Right)
 	if rightErr != nil {
 		return dummy, rightErr
@@ -173,7 +196,7 @@ func unary(expr dt.Unary) (any, error) {
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in unary: %v", expr)}
 }
 
-func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
+func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
 	var leftVal any
 	var rightVal any
 
@@ -188,21 +211,28 @@ func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
 			leftVal = ltemp
 			rightVal = rtemp
 
-		case dt.AddAdd, dt.BangEqual, dt.EqualEqual, dt.Greater, dt.GreaterEqual, dt.Less, dt.LessEqual:
+		case dt.BangEqual, dt.EqualEqual, dt.Greater, dt.GreaterEqual, dt.Less, dt.LessEqual:
 			ltempInt, okLeft := left.(int)
 			rtempInt, okRight := right.(int)
 			if !okLeft || !okRight {
-				return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of int or string, received: %T, %T", expr.Operator, left, right)}
+				ltempStr, okLeft := left.(string)
+				rtempStr, okRight := right.(string)
+				if !okLeft || !okRight {
+					return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must both be type of int or string, received: %T, %T", expr.Operator, left, right)}
+				}
+				leftVal = ltempStr
+				rightVal = rtempStr
 			} else {
 				leftVal = ltempInt
 				rightVal = rtempInt
 				break
 			}
 
+		case dt.AddAdd:
 			ltempStr, okLeft := left.(string)
 			rtempStr, okRight := right.(string)
 			if !okLeft || !okRight {
-				return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of int or string, received: %T, %T", expr.Operator, left, right)}
+				return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of string, received: %T, %T", expr.Operator, left, right)}
 			}
 			leftVal = ltempStr
 			rightVal = rtempStr
@@ -213,7 +243,7 @@ func runtimeCheckBinary(left any, right any, expr dt.Binary) (any, any, error){
 	return leftVal, rightVal, nil
 }
 
-func runtimeCheckUnary(right any, expr dt.Unary) (any, error){
+func runtimeCheckUnary(right any, expr *dt.Unary) (any, error){
 	var rightVal any
 	switch expr.Operator {
 		case dt.Sub:
@@ -236,7 +266,7 @@ func isTruthy(value any) bool {
 			if v == 0 { return false }
 			return true
 		case string:
-			if strings.Compare(v, "") == 0 { return false }
+			if v == "" { return false }
 			return true
 		default:
 			fmt.Println("Need to add more to this!(isTruthy)")
