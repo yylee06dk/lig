@@ -25,6 +25,10 @@ type Unary struct {
 	Right Expr
 }
 
+type Variable struct {
+	Name string
+}
+
 func (e *End) String() string {
 	return fmt.Sprintf("END")
 }
@@ -44,6 +48,11 @@ func (l *Literal) String() string {
 	}
 }
 
+func (v *Variable) String() string {
+	if tokenType
+	return fmt.Sprintf("Var[%s]", v.Name)
+}
+
 func (u *Unary) String() string {
 	return fmt.Sprintf("[ {%v} {%v} ]", u.Operator, u.Right)
 }
@@ -52,3 +61,4 @@ func (_ *End) dummy() {}
 func (_ *Binary) dummy() {}
 func (_ *Literal) dummy() {}
 func (_ *Unary) dummy() {}
+func (_ *Variable) dummy() {}

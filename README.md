@@ -166,3 +166,13 @@ Rather, just `datatypes.Expr` alone means that every type that implements this i
 So, `datatypes.Expr` works as a big set of `*datatypes.Binary`, `*datatypes.Unary`, `*datatypes.Literal`. (Here, it is not weird to have the pointer since they are structs not interfaces)
 With this understood, changing the code was so easier.
 And now, I have a faster and more memory efficient interpreter(compared to the before one)
+
+Decided to add Name field to tokens --> Why?
+I tried to implement scanning/parsing identifiers. Then, identifiers has names not values. So, having a any-type value for a 100% string means meaningless code
+needed to be written every time we deal with identifiers(type assertions). So, I added a Name field of type string and a Variable expression with Name field
+
+Also, following from above, we see that we need to define keywords somewhere. I decided to define it in the datatypes package, since
+- Identifier Expression needs to see it to know if itself is a variable/keyword
+- We can import it from the interpreter to see if its a keyword.
+> Note that we are not checking this from the parser since parser is only about grammar.
+

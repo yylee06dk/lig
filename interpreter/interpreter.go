@@ -165,10 +165,10 @@ func binary(expr *dt.Binary) (any, error) {
 
 func literal(expr *dt.Literal) (any, error) {
 	switch v := expr.Value.(type) {
-		case int, string:
+		case int, string, bool:
 			return v, nil
 		default:
-			return 0, &RuntimeError{expr, fmt.Sprintf("Expected type int or string, received type: %T", v)}
+			return 0, &RuntimeError{expr, fmt.Sprintf("Expected type int or string or bool, received type: %T", v)}
 	}
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
@@ -193,7 +193,6 @@ func unary(expr *dt.Unary) (any, error) {
 		default:
 			return dummy, &RuntimeError{expr, fmt.Sprintf("Unrechable, or you maybe added another unary operator: %v", expr)}
 	}
-	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in unary: %v", expr)}
 }
 
 func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){

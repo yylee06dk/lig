@@ -5,13 +5,6 @@ import (
 	dt "lig/datatypes"
 )
 
-// Top-level declaration.
- 
-// Dummy Expression (for error returning)
-
-var dummy dt.Expr = &dt.Literal{0}
-
-
 type Parser struct {
 	Tokens []dt.Token
 	cur int
@@ -55,7 +48,7 @@ func (p *Parser) expression() (dt.Expr, error) {
 func (p *Parser) equality() (dt.Expr, error) {
 	left, leftErr := p.comparison()
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	for !p.isAtEnd() && (p.match(dt.EqualEqual) || p.match(dt.BangEqual)) {
@@ -74,7 +67,7 @@ func (p *Parser) equality() (dt.Expr, error) {
 func (p *Parser) comparison() (dt.Expr, error) {
 	left, leftErr := p.term()
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	if p.match(dt.Greater) || p.match(dt.GreaterEqual) || p.match(dt.Less) || p.match(dt.LessEqual) {
@@ -92,7 +85,7 @@ func (p *Parser) comparison() (dt.Expr, error) {
 func (p *Parser) term() (dt.Expr, error) {
 	left, leftErr := p.concat()
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	for !p.isAtEnd() && (p.match(dt.Sub) || p.match(dt.Add)) {
@@ -110,7 +103,7 @@ func (p *Parser) term() (dt.Expr, error) {
 func (p *Parser) concat() (dt.Expr, error) {
 	left, leftErr := p.factor()
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	for !p.isAtEnd() && p.match(dt.AddAdd) {
@@ -128,7 +121,7 @@ func (p *Parser) concat() (dt.Expr, error) {
 func (p *Parser) factor() (dt.Expr, error) {
 	left, leftErr := p.unary()
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	for !p.isAtEnd() && (p.match(dt.Mult) || p.match(dt.Div)) {
@@ -148,7 +141,7 @@ func (p *Parser) unary() (dt.Expr, error) {
 		operator := p.previous()
 		right, rightErr := p.unary()
 		if rightErr != nil {
-			return dummy, rightErr
+			return nil, rightErr
 		}
 		right = &dt.Unary{operator.Type, right}
 		return right, nil
@@ -156,7 +149,7 @@ func (p *Parser) unary() (dt.Expr, error) {
 
 	prim, primErr := p.primary()
 	if primErr != nil {
-		return dummy, primErr
+		return nil, primErr
 	}
 
 	return prim, nil
@@ -164,14 +157,22 @@ func (p *Parser) unary() (dt.Expr, error) {
 
 func (p *Parser) primary() (dt.Expr, error) {
 	if p.isAtEnd() {
-		return dummy, &ParseError{p.previous(), "Expected literal, received nothing"}
+		return nil, &ParseError{p.previous(), "Expected literal, received nothing"}
 	}
+
 	if p.match(dt.Number) {
 		return &dt.Literal{p.previous().Value}, nil
 	} else if p.match(dt.String) {
 		return &dt.Literal{p.previous().Value}, nil
+	} else if p.match(dt.Identifier) {
+		return &dt.Variable{p.previous().Name}, nil
+	} else if p.match(dt.True) {
+		return &dt.Literal{true}, nil
+	} else if p.match(dt.False) {
+		return &dt.Literal{false}, nil
 	} else {
-		return dummy, &ParseError{p.previous(), fmt.Sprintf("Expected literal, received %v", p.peek())}
+		return nil, &ParseError{p.peek(), fmt.Sprintf("Expected literal, received %v", p.peek())}
+		// we need to peek since no match has occured!
 	}
 }
 

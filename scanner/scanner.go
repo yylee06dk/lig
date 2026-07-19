@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-var dummy dt.Token = dt.Token{dt.Error, 0}
+var errToken dt.Token = dt.Token{Type:dt.Error}
 
 type Scanner struct {
 	Src string 
@@ -34,7 +34,7 @@ func (s *Scanner) ScanTokens() ([]dt.Token, error) {
     }
 
     // input line terminated without leftover stuffs
-    res = append(res, dt.Token{dt.EOF, 0})
+    res = append(res, dt.Token{Type:dt.EOF})
 
     return res, nil
 }
@@ -64,73 +64,73 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 	if !s.isAtEnd() {
 		c = s.advance()
 	} else {
-		return dt.Token{dt.EOF, 0}, nil
+		return dt.Token{Type:dt.EOF}, nil
 	}
 
 	switch c {
 		case '+':
 			if s.match('+') {
-				res = dt.Token{dt.AddAdd, 0}
+				res = dt.Token{Type:dt.AddAdd}
 				break
 			}
-			res = dt.Token{dt.Add, 0}
+			res = dt.Token{Type:dt.Add}
 
 		case '-':
-			res = dt.Token{dt.Sub, 0}
+			res = dt.Token{Type:dt.Sub}
 
 		case '*':
-			res = dt.Token{dt.Mult, 0}
+			res = dt.Token{Type:dt.Mult}
 
 		case '/':
-			res = dt.Token{dt.Div, 0}
+			res = dt.Token{Type:dt.Div}
 
 		case '!':
 			if s.match('=') {
-				res = dt.Token{dt.BangEqual, 0}
+				res = dt.Token{Type:dt.BangEqual}
 				break
 			}
-			res = dt.Token {dt.Bang, 0}
+			res = dt.Token{Type:dt.Bang}
 
 		case '>':
 			if s.match('=') {
-				res = dt.Token{dt.GreaterEqual, 0}
+				res = dt.Token{Type:dt.GreaterEqual}
 				break
 			}
-			res = dt.Token {dt.Greater, 0}
+			res = dt.Token{Type:dt.Greater}
 
 		case '<':
 			if s.match('=') {
-				res = dt.Token{dt.LessEqual, 0}
+				res = dt.Token{Type:dt.LessEqual}
 				break
 			}
-			res = dt.Token {dt.Less, 0}
+			res = dt.Token{Type:dt.Less}
 
 		case '=':
 			if s.match('=') {
-				res = dt.Token {dt.EqualEqual, 0}
+				res = dt.Token{Type:dt.EqualEqual}
 				break
 			}
-			res = dt.Token {dt.Equal, 0}
+			res = dt.Token{Type:dt.Equal}
 
 		case '&':
 			if s.match('&') {
-				res = dt.Token{dt.And, 0}
+				res = dt.Token{Type:dt.And}
 				break
 			}
-			return dummy, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '&')}
+			return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '&')}
 
 		case '|':
 			if s.match('|') {
-				res = dt.Token{dt.Or, 0}
+				res = dt.Token{Type:dt.Or, Value:0}
 				break
 			}
-			return dummy, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '|')}
+			return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '|')}
 
 		case '"':
 			var strErr error
 			res, strErr = s.string()
 			if strErr != nil {
-				return dummy, strErr
+				return errToken, strErr
 			}
  
 		default:
@@ -170,10 +170,10 @@ func (s *Scanner) number() (dt.Token, error) {
 	num, atoiErr := strconv.Atoi(s.Src[start:s.cur])
 
 	if(atoiErr != nil) {
-		return dummy, fmt.Errorf("Failed to parse string to int: %w", atoiErr)
+		return errToken, fmt.Errorf("Failed to parse string to int: %w", atoiErr)
 	}
 
-	return dt.Token{dt.Number, num}, nil
+	return dt.Token{Type:dt.Number, Value:num}, nil
 }
 
 func (s *Scanner) string() (dt.Token, error) {
@@ -186,11 +186,11 @@ func (s *Scanner) string() (dt.Token, error) {
 	stringVal := s.Src[start:s.cur]
 
 	if s.isAtEnd() {
-		return dummy, &ScanError{s.Src, s.cur, fmt.Sprintf("Unterminated string: %s", stringVal)}
+		return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Unterminated string: %s", stringVal)}
 	}
 	_ = s.advance()
 
-	return dt.Token{dt.String, stringVal}, nil
+	return dt.Token{Type:dt.String, Value:stringVal}, nil
 }
 
 func (s *Scanner) identifier() dt.Token {
@@ -201,7 +201,10 @@ func (s *Scanner) identifier() dt.Token {
 
 	name := s.Src[start:s.cur]
 
-	return dt.Token{dt.Identifier, name}
+	if tokenType, exists := dt.Keywords[name]; exists {
+		return dt.Token{Type:tokenType, Name:name}
+	}
+	return dt.Token{Type:dt.Identifier, Name:name}
 }
 
 func (s *Scanner) peek() byte {
