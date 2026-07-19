@@ -155,3 +155,7 @@ But, using left-recursive grammar, we cannot deal with parsing the "left-part". 
 
 Addressing the grammar was quite of a pain(Since I read the book once, I passed the real pain of amibiguity and more)
 But, after the grammar was given, the implementing the parser was so easy.
+
+###### Interpreter
+Again, it was quite easy to deal with, but the go's type assertion was a bit of a pain, but it was doable, and still an enjoyable process.
+Also, learned how Go deals with return statements especially mixed with switch statements. It seems safe and robust.
