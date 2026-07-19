@@ -165,4 +165,4 @@ kept on trying to pass pointers to interfaces with the type `*datatypes.Expr` wh
 Rather, just `datatypes.Expr` alone means that every type that implements this interface. And using pointer receivers, we implement the interface with pointer types.
 So, `datatypes.Expr` works as a big set of `*datatypes.Binary`, `*datatypes.Unary`, `*datatypes.Literal`. (Here, it is not weird to have the pointer since they are structs not interfaces)
 With this understood, changing the code was so easier.
-And now, I have a blazingly fast interpreter(compared to the before one)
+And now, I have a faster and more memory efficient interpreter(compared to the before one)
