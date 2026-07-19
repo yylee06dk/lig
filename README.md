@@ -144,7 +144,8 @@ eqaulity -> comparison ("==" | "!=") equality | comparison
 comparison -> term compops term | term   //  Where compops -> ">" | ">=" | "<" | "<="
 term -> concat ("+" | "-") term | concat
 concat -> factor "++" concat | factor // This does feel really weird
-factor -> primary ("*" | "/") factor | primary
+factor -> unary ("*" | "/") factor | unary
+unary -> ("!" | "-") primary | primary
 primary -> "true" | "false" | Number | String | Identifier
 ```
 

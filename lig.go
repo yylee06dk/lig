@@ -72,6 +72,7 @@ func main() {
 			fmt.Println(interpErr)
 			continue
 		}
+		if resVal == nil { fmt.Println() }
 		fmt.Printf("Interpret Result: %v\n", resVal)
 	}
 }

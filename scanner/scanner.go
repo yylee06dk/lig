@@ -24,8 +24,11 @@ func (s *Scanner) ScanTokens() ([]dt.Token, error) {
 
     for !s.isAtEnd() {
     	temp, err = s.scanToken()
-    	if (err != nil) {
+    	if err != nil {
     		return res, fmt.Errorf("ScanError: %w", err)
+    	}
+    	if temp.Type == dt.EOF {
+    		break
     	}
     	res = append(res, temp)
     }
@@ -55,9 +58,14 @@ func (s *Scanner) isAtEnd() bool  {
 // When error retval is not used
 func (s *Scanner) scanToken() (dt.Token, error) {
 	var res dt.Token
+	var c byte
 
 	s.skipWhitespace()
-	c := s.advance()
+	if !s.isAtEnd() {
+		c = s.advance()
+	} else {
+		return dt.Token{dt.EOF, 0}, nil
+	}
 
 	switch c {
 		case '+':

@@ -22,6 +22,7 @@ func New(tokens []dt.Token) *Parser {
 }
 
 func (p *Parser) Parse() (dt.Expr, error) {
+	if len(p.Tokens) == 1 { return dt.End{}, nil }
 	res, err := p.expression()
 	if err != nil {
 		return res, fmt.Errorf("ParseError: %w", err)
@@ -125,14 +126,14 @@ func (p *Parser) concat() (dt.Expr, error) {
 }
 
 func (p *Parser) factor() (dt.Expr, error) {
-	left, leftErr := p.primary()
+	left, leftErr := p.unary()
 	if leftErr != nil {
 		return dummy, leftErr
 	}
 
 	for !p.isAtEnd() && (p.match(dt.Mult) || p.match(dt.Div)) {
 		operator := p.previous()
-		right, rightErr := p.primary()
+		right, rightErr := p.unary()
 		if rightErr != nil {
 			return left, rightErr
 		}
@@ -140,6 +141,25 @@ func (p *Parser) factor() (dt.Expr, error) {
 	}
 
 	return left, nil
+}
+
+func (p *Parser) unary() (dt.Expr, error) {
+	if !p.isAtEnd() && (p.match(dt.Bang) || p.match(dt.Sub)) {
+		operator := p.previous()
+		right, rightErr := p.unary()
+		if rightErr != nil {
+			return dummy, rightErr
+		}
+		right = dt.Unary{operator.Type, right}
+		return right, nil
+	}
+
+	prim, primErr := p.primary()
+	if primErr != nil {
+		return dummy, primErr
+	}
+
+	return prim, nil
 }
 
 func (p *Parser) primary() (dt.Expr, error) {
