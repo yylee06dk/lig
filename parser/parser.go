@@ -57,7 +57,7 @@ func (p *Parser) equality() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = &dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator, right}
 	}
 
 	return left, nil
@@ -76,7 +76,7 @@ func (p *Parser) comparison() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = &dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator, right}
 	}
 
 	return left, nil
@@ -94,7 +94,7 @@ func (p *Parser) term() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = &dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator, right}
 	}
 
 	return left, nil
@@ -112,7 +112,7 @@ func (p *Parser) concat() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = &dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator, right}
 	}
 
 	return left, nil
@@ -130,7 +130,7 @@ func (p *Parser) factor() (dt.Expr, error) {
 		if rightErr != nil {
 			return left, rightErr
 		}
-		left = &dt.Binary{left, operator.Type, right}
+		left = &dt.Binary{left, operator, right}
 	}
 
 	return left, nil
@@ -143,7 +143,7 @@ func (p *Parser) unary() (dt.Expr, error) {
 		if rightErr != nil {
 			return nil, rightErr
 		}
-		right = &dt.Unary{operator.Type, right}
+		right = &dt.Unary{operator, right}
 		return right, nil
 	}
 

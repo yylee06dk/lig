@@ -17,7 +17,7 @@ func Interpret(expr dt.Expr) (any, error) {
 		case *dt.Binary:
 			res, err := binary(v)
 			if err != nil {
-				return dummy, fmt.Errorf("RuntimeError: %w", err)
+				return dummy, err
 			}
 			return res, nil
 
@@ -25,33 +25,33 @@ func Interpret(expr dt.Expr) (any, error) {
 			// Need to deal with keywords
 			res, err := literal(v)
 			if err != nil {
-				return dummy, fmt.Errorf("RuntimeError: %w", err)
+				return dummy, err
 			}
 			return res, nil
 
 		case *dt.Unary:
 			res, err := unary(v)
 			if err != nil {
-				return dummy, fmt.Errorf("RuntimeError: %w", err)
+				return dummy, err
 			}
 			return res, nil
 
 		default:
-			return dummy, &RuntimeError{&dt.Literal{0}, fmt.Sprintf("RuntimeError: Unexpected expression")}
+			return dummy, &RuntimeError{dt.Token{}, fmt.Sprintf("RuntimeError: Unexpected expression")}
 	}
 }
 
 type RuntimeError struct {
-	CurExpr dt.Expr
+	ErrToken dt.Token 
 	Msg string
 }
 
 func (e *RuntimeError) Error() string {
-	return fmt.Sprintf("In expression %v, error occured: %s", e.CurExpr, e.Msg)
+	return e.Msg
 }
 
 func binary(expr *dt.Binary) (any, error) {
-	operator := expr.Operator
+	operator := expr.Operator.Type
 
 	left, leftErr := Interpret(expr.Left)
 	if leftErr != nil {
@@ -159,7 +159,7 @@ func binary(expr *dt.Binary) (any, error) {
 			}
 
 		default:
-			return dummy, &RuntimeError{expr, fmt.Sprintf("Unknown Operator: [%v]", operator)}
+			return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown Operator: [%v]", operator)}
 	}
 }
 
@@ -168,7 +168,7 @@ func literal(expr *dt.Literal) (any, error) {
 		case int, string, bool:
 			return v, nil
 		default:
-			return 0, &RuntimeError{expr, fmt.Sprintf("Expected type int or string or bool, received type: %T", v)}
+			return 0, &RuntimeError{dt.Token{}, fmt.Sprintf("Expected type int or string or bool, received type: %T", v)}
 	}
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
@@ -184,14 +184,14 @@ func unary(expr *dt.Unary) (any, error) {
 		return dummy, runtimeErr
 	}
 
-	switch expr.Operator {
+	switch expr.Operator.Type {
 		case dt.Sub:
 			rightVal := rightVal.(int)
 			return -rightVal, nil
 		case dt.Bang:
 			return !isTruthy(rightVal), nil
 		default:
-			return dummy, &RuntimeError{expr, fmt.Sprintf("Unrechable, or you maybe added another unary operator: %v", expr)}
+			return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unreachable, or you maybe added another unary operator: %v", expr)}
 	}
 }
 
@@ -199,12 +199,12 @@ func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
 	var leftVal any
 	var rightVal any
 
-	switch expr.Operator {
+	switch expr.Operator.Type {
 		case dt.Add, dt.Sub, dt.Mult, dt.Div:
 			ltemp, okLeft := left.(int)
 			rtemp, okRight := right.(int)
 			if !okLeft || !okRight {
-				return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of int, received: %T, %T", expr.Operator, left, right)}
+				return 0, 0, &RuntimeError{expr.Operator, fmt.Sprintf("Operands of %v must be type of int, received: %T, %T", expr.Operator.Type, left, right)}
 			}
 
 			leftVal = ltemp
@@ -217,7 +217,7 @@ func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
 				ltempStr, okLeft := left.(string)
 				rtempStr, okRight := right.(string)
 				if !okLeft || !okRight {
-					return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must both be type of int or string, received: %T, %T", expr.Operator, left, right)}
+					return 0, 0, &RuntimeError{expr.Operator, fmt.Sprintf("Operands of %v must both be type of int or string, received: %T, %T", expr.Operator.Type, left, right)}
 				}
 				leftVal = ltempStr
 				rightVal = rtempStr
@@ -231,24 +231,24 @@ func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
 			ltempStr, okLeft := left.(string)
 			rtempStr, okRight := right.(string)
 			if !okLeft || !okRight {
-				return 0, 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of string, received: %T, %T", expr.Operator, left, right)}
+				return 0, 0, &RuntimeError{expr.Operator, fmt.Sprintf("Operands of %v must be type of string, received: %T, %T", expr.Operator.Type, left, right)}
 			}
 			leftVal = ltempStr
 			rightVal = rtempStr
 
 		default:
-			return 0, 0, &RuntimeError{expr, fmt.Sprintf("Unknown or not yet implemented binary operator: %v", expr.Operator)}
+			return 0, 0, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown or not yet implemented binary operator: %v", expr.Operator.Type)}
 	}
 	return leftVal, rightVal, nil
 }
 
 func runtimeCheckUnary(right any, expr *dt.Unary) (any, error){
 	var rightVal any
-	switch expr.Operator {
+	switch expr.Operator.Type {
 		case dt.Sub:
 			rtemp, okRight := right.(int)
 			if !okRight {
-				return 0, &RuntimeError{expr, fmt.Sprintf("Operands of %v must be type of int, received: %T", expr.Operator, right)}
+				return 0, &RuntimeError{expr.Operator, fmt.Sprintf("Operands of %v must be type of int, received: %T", expr.Operator.Type, right)}
 			}
 			rightVal = rtemp
 
@@ -267,7 +267,10 @@ func isTruthy(value any) bool {
 		case string:
 			if v == "" { return false }
 			return true
+		case bool:
+			return v
 		default:
+			// Hope its unreachable
 			fmt.Println("Need to add more to this!(isTruthy)")
 			return false
 	}

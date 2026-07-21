@@ -24,7 +24,7 @@ func main() {
 
 		fileReader := bufio.NewReader(filePtr)
 
-		src, readErr := io.ReadAll(fileReader)
+		src, readErr := io.ReadAll(fileReader) // Can be made better with unsafe(no modification ensured)
 		if readErr != nil {
 			fmt.Println(readErr)
 			os.Exit(1)

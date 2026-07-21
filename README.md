@@ -176,3 +176,13 @@ Also, following from above, we see that we need to define keywords somewhere. I 
 - We can import it from the interpreter to see if its a keyword.
 > Note that we are not checking this from the parser since parser is only about grammar.
 
+### Stage 1-2
+Adding some convenience features to the language. (File as input, better error printing)
+And, between that I found out why unsafe-features are needed, and why the book decided to have lexemes inside tokens.
+The first one is because, sometimes the compiler's safe checks are a limit for efficiency and speed. When human can 100% ensure some properties of the data, we can there are cases
+where we can perform better in unsafe ways. For example, to add files as input for the interpreter, I changed every string-types for source code to []byte types. And, changing a
+file to a []byte type means allocation in the heap. If the allocation is very large, this will become a very expensive function call. So, in such interpreters, we know that we will
+only read the source code. So, we can use unsafe function calls such as unsafe.Slice that immediately returns the existing memory address without allocation(So, the memory of the
+source file)
+For the second one, it was for error printing. I feel like I'm (once again) losing to the book since, I got rid of it because lexeme seemed to be used only for identifiers, and
+we can deal the identifier's names with any-typed field, `Value`. But, yepp to have better error printing, we need to deal with lexemes

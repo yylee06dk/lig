@@ -12,7 +12,7 @@ type End struct {}
 
 type Binary struct {
 	Left Expr
-	Operator Tokentype
+	Operator Token
 	Right Expr
 }
 
@@ -21,7 +21,7 @@ type Literal struct {
 }
 
 type Unary struct {
-	Operator Tokentype
+	Operator Token
 	Right Expr
 }
 
