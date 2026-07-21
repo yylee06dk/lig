@@ -43,13 +43,14 @@ func (l *Literal) String() string {
 			return fmt.Sprintf("num[%v]", l.Value)
 		case string:
 			return fmt.Sprintf("string[%s]", v)
+		case bool:
+			return fmt.Sprintf("boolean[%v]", v)
 		default:
 			return fmt.Sprintf("UnknownLiteral: %v",l. Value)
 	}
 }
 
 func (v *Variable) String() string {
-	if tokenType
 	return fmt.Sprintf("Var[%s]", v.Name)
 }
 

@@ -9,11 +9,11 @@ import (
 var errToken dt.Token = dt.Token{Type:dt.Error}
 
 type Scanner struct {
-	Src string 
+	Src []byte
 	cur int
 }
 
-func New(source string) *Scanner {
+func New(source []byte) *Scanner {
 	return &Scanner{source, 0}
 }
 
@@ -40,7 +40,7 @@ func (s *Scanner) ScanTokens() ([]dt.Token, error) {
 }
 
 type ScanError struct {
-	Source string // Bad design? if dealing with source code not repl-like source line.
+	Source []byte // Bad design? if dealing with source code not repl-like source line.
 	Pos int // Character level position
 	Msg string // Error message
 }
@@ -167,7 +167,7 @@ func (s *Scanner) number() (dt.Token, error) {
 		_ = s.advance()
 	}
 
-	num, atoiErr := strconv.Atoi(s.Src[start:s.cur])
+	num, atoiErr := strconv.Atoi(string(s.Src[start:s.cur]))
 
 	if(atoiErr != nil) {
 		return errToken, fmt.Errorf("Failed to parse string to int: %w", atoiErr)
@@ -199,7 +199,7 @@ func (s *Scanner) identifier() dt.Token {
 		_ = s.advance()
 	}
 
-	name := s.Src[start:s.cur]
+	name := string(s.Src[start:s.cur])
 
 	if tokenType, exists := dt.Keywords[name]; exists {
 		return dt.Token{Type:tokenType, Name:name}

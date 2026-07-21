@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"bufio"
 	"fmt"
 	"os"
@@ -8,71 +9,91 @@ import (
 	"lig/parser"
 	"lig/interpreter"
 )
-	
+
 func main() {
-	if len(os.Args) != 1 {
-		fmt.Println("Working on taking files yet... Please use the REPL")
-		return
-	}
-
-	reader := bufio.NewReader(os.Stdin)
-	var srcScanner *scanner.Scanner
-
-
-	for {
-		// Take input
-		fmt.Print("> ")
-		input, readErr := reader.ReadString('\n')
-		if readErr != nil {
-			fmt.Println("ReadError: %w", readErr)
+	if len(os.Args) > 2 {
+		fmt.Println("Usage: lox <file_path>")
+		os.Exit(1)
+	} else if len(os.Args) == 2 {
+		path := os.Args[1]
+		filePtr, err := os.Open(path)
+		if err != nil {
+			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Scan it to token list
-		srcScanner = scanner.New(input)
-		tokenSlice, scanErr := srcScanner.ScanTokens()
+		fileReader := bufio.NewReader(filePtr)
 
-		if scanErr != nil {
-			fmt.Println(scanErr)
-			
-			fmt.Println("Until then, scanned this:")
-
-			for i, value := range tokenSlice {
-				fmt.Printf("%v: %+v ", i, value)
-			}
-			fmt.Println()
-			continue
+		src, readErr := io.ReadAll(fileReader)
+		if readErr != nil {
+			fmt.Println(readErr)
+			os.Exit(1)
 		}
 
-		fmt.Printf("Scan Result: ")
-		for _, value := range tokenSlice {
-			fmt.Printf("%+v ", value)
+		runWithDebug(src)
+	} else {
+
+		reader := bufio.NewReader(os.Stdin)
+
+		for {
+			// Take input
+			fmt.Print("> ")
+			input, readErr := reader.ReadString('\n')
+			if readErr != nil {
+				fmt.Println("ReadError: %w", readErr)
+				os.Exit(1)
+			}
+
+			runWithDebug([]byte(input))
+		}
+	}
+}
+
+func runWithDebug(src []byte) {
+	// Scan it to token list
+	srcScanner := scanner.New(src)
+	tokenSlice, scanErr := srcScanner.ScanTokens()
+	
+	if scanErr != nil {
+		fmt.Println(scanErr)
+		
+		fmt.Println("Until then, scanned this:")
+	
+		for i, value := range tokenSlice {
+			fmt.Printf("%v: %+v ", i, value)
 		}
 		fmt.Println()
-
-		// Parse to AST
-		parser := parser.New(tokenSlice)
-		expr, parseErr := parser.Parse()
-
-		if parseErr != nil {
-			fmt.Println(parseErr)
-			
-			fmt.Println("Until then, parsed this:")
-
-			fmt.Printf("%+v\n", expr)
-			continue
-		}
-
-		fmt.Printf("Parse Result: ")
-		fmt.Printf("%+v\n", expr)
-
-		// Interpret AST to value
-		resVal, interpErr := interpreter.Interpret(expr)
-		if interpErr != nil {
-			fmt.Println(interpErr)
-			continue
-		}
-		if resVal == nil { fmt.Println() }
-		fmt.Printf("Interpret Result: %v\n", resVal)
+		return //panic
 	}
+	
+	fmt.Printf("Scan Result: ")
+	for _, value := range tokenSlice {
+		fmt.Printf("%+v ", value)
+	}
+	fmt.Println()
+	
+	// Parse to AST
+	parser := parser.New(tokenSlice)
+	expr, parseErr := parser.Parse()
+	
+	if parseErr != nil {
+		fmt.Println(parseErr)
+		
+		fmt.Println("Until then, parsed this:")
+	
+		fmt.Printf("%+v\n", expr)
+		return // panic
+	}
+	
+	fmt.Printf("Parse Result: ")
+	fmt.Printf("%+v\n", expr)
+	
+	// Interpret AST to value
+	resVal, interpErr := interpreter.Interpret(expr)
+	if interpErr != nil {
+		fmt.Println(interpErr)
+		return // Panic
+	}
+	if resVal == nil { fmt.Println() }
+	fmt.Printf("Interpret Result: %v\n", resVal)
 }
