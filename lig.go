@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"bufio"
 	"fmt"
@@ -53,9 +54,14 @@ func runWithDebug(src []byte) {
 	// Scan it to token list
 	srcScanner := scanner.New(src)
 	tokenSlice, scanErr := srcScanner.ScanTokens()
+	var scanError scanner.ScanError
 	
 	if scanErr != nil {
-		fmt.Println(scanErr)
+		if errors.As(scanErr, &scanError) {
+			fmt.Println("[line ", scanError.CurLine, "] ", scanError)
+		} else {
+			fmt.Println(scanErr)
+		}
 		
 		fmt.Println("Until then, scanned this:")
 	
@@ -63,7 +69,7 @@ func runWithDebug(src []byte) {
 			fmt.Printf("%v: %+v ", i, value)
 		}
 		fmt.Println()
-		return //panic
+		return //panic-- More like, the token list is wrong, so don't parse it!
 	}
 	
 	fmt.Printf("Scan Result: ")

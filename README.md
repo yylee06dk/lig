@@ -186,3 +186,10 @@ only read the source code. So, we can use unsafe function calls such as unsafe.S
 source file)
 For the second one, it was for error printing. I feel like I'm (once again) losing to the book since, I got rid of it because lexeme seemed to be used only for identifiers, and
 we can deal the identifier's names with any-typed field, `Value`. But, yepp to have better error printing, we need to deal with lexemes
+
+Not exactly the fun part for user convenience. I feel like I'm digging more into single functions to see if it can satisfy what I'm looking for. Since, I haven't dealt with
+user convenience in coding, (I only coded for CS projects that normally try to conceptualize what we learned) this was quite of a hard part.
+Feels like if I started with a better structure, it would've been a little easier. Starts feel like the code is turning into spaghetti. I'm looking for more hacks to just squeeze
+in one functionality(like skipping comments) and more. I guess this is the way to "good architecture". Modularizing code and especially determinating return types.
+Like I see many cases that I can deal with some explicit return value, but this makes the code worse. In go, I could've tried something like adding a struct field or adding a
+return value and more. But, this makes the need of total change in the code. So I chose to just return something weird and check if it's weird in the caller.

@@ -4,50 +4,58 @@ import (
 	"fmt"
 	dt "lig/datatypes"
 	"strconv"
+	"errors"
 )
 
 var errToken dt.Token = dt.Token{Type:dt.Error}
+var skipToken dt.Token = dt.Token{Type:dt.Skip}
 
 type Scanner struct {
 	Src []byte
 	cur int
+	curLine int
 }
 
 func New(source []byte) *Scanner {
-	return &Scanner{source, 0}
+	return &Scanner{source, 0, 1}
 }
 
 func (s *Scanner) ScanTokens() ([]dt.Token, error) {
-    var res []dt.Token
-    var temp dt.Token
-    var err error
+  var res []dt.Token
+  var err error
+  var hadError bool = false
 
-    for !s.isAtEnd() {
-    	temp, err = s.scanToken()
-    	if err != nil {
-    		return res, fmt.Errorf("ScanError: %w", err)
-    	}
-    	if temp.Type == dt.EOF {
-    		break
-    	}
-    	res = append(res, temp)
-    }
+  for !s.isAtEnd() {
+  	temp, scanErr := s.scanToken()
+  	if scanErr != nil {
+  		hadError = true
+   		err = errors.Join(err, scanErr)
+   		continue
+   	}
+   	if temp.Type == dt.EOF {
+   		break
+   	}
+   	if temp.Type == dt.Skip {
+   		continue
+   	}
+   	res = append(res, temp)
+  }
 
-    // input line terminated without leftover stuffs
-    res = append(res, dt.Token{Type:dt.EOF})
-
-    return res, nil
+  // input line terminated without leftover stuffs
+  res = append(res, dt.Token{Type:dt.EOF, Line: s.curLine})
+  if hadError {
+		return res, err
+	}
+	return res, nil
 }
 
 type ScanError struct {
-	Source []byte // Bad design? if dealing with source code not repl-like source line.
-	Pos int // Character level position
+	CurLine int
 	Msg string // Error message
 }
 
-func (e *ScanError) Error() string {
-	return fmt.Sprintf("In position %v in source [%s], error occured: %s\n", e.Pos, e.Source, e.Msg)
-	// This is excessive. Deal such errors at top level. Is it? Not sure yet..
+func (e ScanError) Error() string {
+	return e.Msg
 }
 
 func (s *Scanner) isAtEnd() bool  {
@@ -64,67 +72,71 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 	if !s.isAtEnd() {
 		c = s.advance()
 	} else {
-		return dt.Token{Type:dt.EOF}, nil
+		return dt.Token{Type:dt.EOF, Line: s.curLine}, nil
 	}
 
 	switch c {
 		case '+':
 			if s.match('+') {
-				res = dt.Token{Type:dt.AddAdd}
+				res = dt.Token{Type:dt.AddAdd, Line: s.curLine}
 				break
 			}
-			res = dt.Token{Type:dt.Add}
+			res = dt.Token{Type:dt.Add, Line: s.curLine}
 
 		case '-':
-			res = dt.Token{Type:dt.Sub}
+			res = dt.Token{Type:dt.Sub, Line: s.curLine}
 
 		case '*':
-			res = dt.Token{Type:dt.Mult}
+			res = dt.Token{Type:dt.Mult, Line: s.curLine}
 
 		case '/':
-			res = dt.Token{Type:dt.Div}
+			if s.match('/') {
+				s.skipTilNewline()
+				res = skipToken
+			}
+			res = dt.Token{Type:dt.Div, Line: s.curLine}
 
 		case '!':
 			if s.match('=') {
-				res = dt.Token{Type:dt.BangEqual}
+				res = dt.Token{Type:dt.BangEqual, Line: s.curLine}
 				break
 			}
-			res = dt.Token{Type:dt.Bang}
+			res = dt.Token{Type:dt.Bang, Line: s.curLine}
 
 		case '>':
 			if s.match('=') {
-				res = dt.Token{Type:dt.GreaterEqual}
+				res = dt.Token{Type:dt.GreaterEqual, Line: s.curLine}
 				break
 			}
-			res = dt.Token{Type:dt.Greater}
+			res = dt.Token{Type:dt.Greater, Line: s.curLine}
 
 		case '<':
 			if s.match('=') {
-				res = dt.Token{Type:dt.LessEqual}
+				res = dt.Token{Type:dt.LessEqual, Line: s.curLine}
 				break
 			}
-			res = dt.Token{Type:dt.Less}
+			res = dt.Token{Type:dt.Less, Line: s.curLine}
 
 		case '=':
 			if s.match('=') {
-				res = dt.Token{Type:dt.EqualEqual}
+				res = dt.Token{Type:dt.EqualEqual, Line: s.curLine}
 				break
 			}
-			res = dt.Token{Type:dt.Equal}
+			res = dt.Token{Type:dt.Equal, Line: s.curLine}
 
 		case '&':
 			if s.match('&') {
-				res = dt.Token{Type:dt.And}
+				res = dt.Token{Type:dt.And, Line: s.curLine}
 				break
 			}
-			return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '&')}
+			return errToken, &ScanError{s.curLine, fmt.Sprintf("Character %v cannot be used alone", '&')}
 
 		case '|':
 			if s.match('|') {
-				res = dt.Token{Type:dt.Or, Value:0}
+				res = dt.Token{Type:dt.Or, Value:0, Line: s.curLine}
 				break
 			}
-			return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Character %v cannot be used alone", '|')}
+			return errToken, &ScanError{s.curLine, fmt.Sprintf("Character %v cannot be used alone", '|')}
 
 		case '"':
 			var strErr error
@@ -143,7 +155,7 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 			} else if isAlpha(c) {
 				res = s.identifier()
 			} else {
-				return res, &ScanError{s.Src, s.cur, "Unexpected character"}
+				return res, &ScanError{s.curLine, fmt.Sprintf("Unexpected character: %v", s.peek())}
 			}
 	}
 
@@ -158,7 +170,16 @@ func (s *Scanner) skipWhitespace() {
 }
 
 func (s *Scanner) isWhitespace() bool {
-	return (s.Src[s.cur] == ' ' || s.Src[s.cur] == '\n' || s.Src[s.cur] == '\t')
+	if s.peek() == '\n' { s.curLine += 1 }
+	return (s.peek() == ' ' || s.peek() == '\n' || s.peek() == '\t')
+}
+
+func (s *Scanner) skipTilNewline() {
+	for !s.isAtEnd() && s.peek() != '\n' { s.cur += 1 }
+	if s.peek() == '\n' {
+		s.cur += 1 // Now looking at next line!
+		s.curLine += 1
+	}
 }
 
 func (s *Scanner) number() (dt.Token, error) {
@@ -170,27 +191,28 @@ func (s *Scanner) number() (dt.Token, error) {
 	num, atoiErr := strconv.Atoi(string(s.Src[start:s.cur]))
 
 	if(atoiErr != nil) {
-		return errToken, fmt.Errorf("Failed to parse string to int: %w", atoiErr)
+		return errToken, &ScanError{s.curLine, fmt.Sprintf("Failed to parse string to int: %s", atoiErr.Error())} // Wrap it up for line info
 	}
 
-	return dt.Token{Type:dt.Number, Value:num}, nil
+	return dt.Token{Type:dt.Number, Value:num, Line: s.curLine}, nil
 }
 
 func (s *Scanner) string() (dt.Token, error) {
 	start := s.cur // right after "
 
 	for !s.isAtEnd() && (s.peek() != '"') {
+		if s.peek() == '\n' { s.curLine += 1 }
 		_ = s.advance()
 	}
 
 	stringVal := s.Src[start:s.cur]
 
 	if s.isAtEnd() {
-		return errToken, &ScanError{s.Src, s.cur, fmt.Sprintf("Unterminated string: %s", stringVal)}
+		return errToken, &ScanError{s.curLine, fmt.Sprintf("Unterminated string: %s", stringVal)}
 	}
 	_ = s.advance()
 
-	return dt.Token{Type:dt.String, Value:stringVal}, nil
+	return dt.Token{Type:dt.String, Value:stringVal, Line: s.curLine}, nil
 }
 
 func (s *Scanner) identifier() dt.Token {
@@ -202,9 +224,9 @@ func (s *Scanner) identifier() dt.Token {
 	name := string(s.Src[start:s.cur])
 
 	if tokenType, exists := dt.Keywords[name]; exists {
-		return dt.Token{Type:tokenType, Name:name}
+		return dt.Token{Type:tokenType, Name:name, Line: s.curLine}
 	}
-	return dt.Token{Type:dt.Identifier, Name:name}
+	return dt.Token{Type:dt.Identifier, Name:name, Line: s.curLine}
 }
 
 func (s *Scanner) peek() byte {

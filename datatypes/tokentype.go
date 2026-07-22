@@ -35,6 +35,8 @@ const (
 	Or
 
 	Error
+
+	Skip // A hack to skipping characters
 	
 	Group
 	EOF
