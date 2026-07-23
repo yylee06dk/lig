@@ -4,7 +4,6 @@ import (
 	"fmt"
 	dt "lig/datatypes"
 	"strconv"
-	"errors"
 )
 
 var errToken dt.Token = dt.Token{Type:dt.Error}
@@ -20,16 +19,14 @@ func New(source []byte) *Scanner {
 	return &Scanner{source, 0, 1}
 }
 
-func (s *Scanner) ScanTokens() ([]dt.Token, error) {
+func (s *Scanner) ScanTokens() ([]dt.Token, []error) {
   var res []dt.Token
-  var err error
-  var hadError bool = false
+  var errSlice[]error = nil
 
   for !s.isAtEnd() {
   	temp, scanErr := s.scanToken()
   	if scanErr != nil {
-  		hadError = true
-   		err = errors.Join(err, scanErr)
+  		errSlice = append(errSlice, scanErr)
    		continue
    	}
    	if temp.Type == dt.EOF {
@@ -43,10 +40,7 @@ func (s *Scanner) ScanTokens() ([]dt.Token, error) {
 
   // input line terminated without leftover stuffs
   res = append(res, dt.Token{Type:dt.EOF, Line: s.curLine})
-  if hadError {
-		return res, err
-	}
-	return res, nil
+	return res, errSlice // err can be nil
 }
 
 type ScanError struct {
@@ -155,7 +149,7 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 			} else if isAlpha(c) {
 				res = s.identifier()
 			} else {
-				return res, &ScanError{s.curLine, fmt.Sprintf("Unexpected character: %v", s.peek())}
+				return skipToken, &ScanError{s.curLine, fmt.Sprintf("Unexpected character: %q", c)}
 			}
 	}
 

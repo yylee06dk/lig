@@ -54,13 +54,15 @@ func runWithDebug(src []byte) {
 	// Scan it to token list
 	srcScanner := scanner.New(src)
 	tokenSlice, scanErr := srcScanner.ScanTokens()
-	var scanError scanner.ScanError
-	
+	var scanError *scanner.ScanError
+
 	if scanErr != nil {
-		if errors.As(scanErr, &scanError) {
-			fmt.Println("[line ", scanError.CurLine, "] ", scanError)
-		} else {
-			fmt.Println(scanErr)
+		for _, err := range scanErr {
+			if errors.As(err, &scanError) {
+				fmt.Println("[ line", scanError.CurLine, "]", scanError)
+			} else {
+				fmt.Println(err)
+			}
 		}
 		
 		fmt.Println("Until then, scanned this:")
