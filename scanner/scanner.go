@@ -48,7 +48,7 @@ type ScanError struct {
 	Msg string // Error message
 }
 
-func (e ScanError) Error() string {
+func (e *ScanError) Error() string {
 	return e.Msg
 }
 
@@ -199,7 +199,7 @@ func (s *Scanner) string() (dt.Token, error) {
 		_ = s.advance()
 	}
 
-	stringVal := s.Src[start:s.cur]
+	stringVal := string(s.Src[start:s.cur])
 
 	if s.isAtEnd() {
 		return errToken, &ScanError{s.curLine, fmt.Sprintf("Unterminated string: %s", stringVal)}

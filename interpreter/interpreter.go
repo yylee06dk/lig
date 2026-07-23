@@ -8,7 +8,7 @@ import (
 
 var dummy any
 
-func Interpret(expr dt.Expr) (any, error) {
+func Interpret(expr dt.Expr) (any, *RuntimeError) {
 	if _, ok := expr.(*dt.End); ok {
 		return nil, nil
 	} 
@@ -50,7 +50,7 @@ func (e *RuntimeError) Error() string {
 	return e.Msg
 }
 
-func binary(expr *dt.Binary) (any, error) {
+func binary(expr *dt.Binary) (any, *RuntimeError) {
 	operator := expr.Operator.Type
 
 	left, leftErr := Interpret(expr.Left)
@@ -163,7 +163,7 @@ func binary(expr *dt.Binary) (any, error) {
 	}
 }
 
-func literal(expr *dt.Literal) (any, error) {
+func literal(expr *dt.Literal) (any, *RuntimeError) {
 	switch v := expr.Value.(type) {
 		case int, string, bool:
 			return v, nil
@@ -173,7 +173,7 @@ func literal(expr *dt.Literal) (any, error) {
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
 
-func unary(expr *dt.Unary) (any, error) {
+func unary(expr *dt.Unary) (any, *RuntimeError) {
 	right, rightErr := Interpret(expr.Right)
 	if rightErr != nil {
 		return dummy, rightErr
@@ -195,7 +195,7 @@ func unary(expr *dt.Unary) (any, error) {
 	}
 }
 
-func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
+func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, *RuntimeError){
 	var leftVal any
 	var rightVal any
 
@@ -242,7 +242,7 @@ func runtimeCheckBinary(left any, right any, expr *dt.Binary) (any, any, error){
 	return leftVal, rightVal, nil
 }
 
-func runtimeCheckUnary(right any, expr *dt.Unary) (any, error){
+func runtimeCheckUnary(right any, expr *dt.Unary) (any, *RuntimeError){
 	var rightVal any
 	switch expr.Operator.Type {
 		case dt.Sub:

@@ -193,3 +193,7 @@ Feels like if I started with a better structure, it would've been a little easie
 in one functionality(like skipping comments) and more. I guess this is the way to "good architecture". Modularizing code and especially determinating return types.
 Like I see many cases that I can deal with some explicit return value, but this makes the code worse. In go, I could've tried something like adding a struct field or adding a
 return value and more. But, this makes the need of total change in the code. So I chose to just return something weird and check if it's weird in the caller.
+
+Finally dealed with all of the things I've aimed!!
+The biggest targets were, error handling with lines, and File as input + debug mode with flags.
+So happy to see things are working as intended... This definitely is the most loveable project in my life.

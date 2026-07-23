@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"errors"
 	"io"
 	"bufio"
@@ -12,11 +13,16 @@ import (
 )
 
 func main() {
-	if len(os.Args) > 2 {
+	// Flag processing
+	modePtr := flag.Bool("debug", false, "Enable debug mode")
+
+	flag.Parse()
+	debug := *modePtr
+	if flag.NArg() > 2 {
 		fmt.Println("Usage: lox <file_path>")
 		os.Exit(1)
-	} else if len(os.Args) == 2 {
-		path := os.Args[1]
+	} else if flag.NArg() == 2 {
+		path := flag.Args()[0]
 		filePtr, err := os.Open(path)
 		if err != nil {
 			fmt.Println(err)
@@ -31,7 +37,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		runWithDebug(src)
+		if debug {
+			runWithDebug(src)
+		} else {
+			run(src)
+		}
 	} else {
 
 		reader := bufio.NewReader(os.Stdin)
@@ -45,7 +55,11 @@ func main() {
 				os.Exit(1)
 			}
 
-			runWithDebug([]byte(input))
+			if debug {
+				runWithDebug([]byte(input))
+			} else {
+				run([]byte(input))
+			}
 		}
 	}
 }
@@ -59,7 +73,7 @@ func runWithDebug(src []byte) {
 	if scanErr != nil {
 		for _, err := range scanErr {
 			if errors.As(err, &scanError) {
-				fmt.Println("[ line", scanError.CurLine, "]", scanError)
+				fmt.Println("[ line", scanError.CurLine, "]", "ScanError:", scanError)
 			} else {
 				fmt.Println(err)
 			}
@@ -85,7 +99,7 @@ func runWithDebug(src []byte) {
 	expr, parseErr := parser.Parse()
 	
 	if parseErr != nil {
-		fmt.Println(parseErr)
+		fmt.Println("[ line", parseErr.Token.Line, "]", "ParseError:", parseErr)
 		
 		fmt.Println("Until then, parsed this:")
 	
@@ -99,9 +113,49 @@ func runWithDebug(src []byte) {
 	// Interpret AST to value
 	resVal, interpErr := interpreter.Interpret(expr)
 	if interpErr != nil {
-		fmt.Println(interpErr)
+		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
 		return // Panic
 	}
 	if resVal == nil { fmt.Println() }
 	fmt.Printf("Interpret Result: %v\n", resVal)
+}
+
+func run(src []byte) {
+	// Scan it to token list
+	srcScanner := scanner.New(src)
+	tokenSlice, scanErr := srcScanner.ScanTokens()
+	var scanError *scanner.ScanError
+
+	if scanErr != nil {
+		for _, err := range scanErr {
+			if errors.As(err, &scanError) {
+				fmt.Println("[ line", scanError.CurLine, "]", "ScanError:", scanError)
+			} else {
+				fmt.Println(err)
+			}
+		}
+		return //panic-- More like, the token list is wrong, so don't parse it!
+	}
+	
+	// Parse to AST
+	parser := parser.New(tokenSlice)
+	expr, parseErr := parser.Parse()
+	
+	if parseErr != nil {
+		fmt.Println("[ line", parseErr.Token.Line, "]", "ParseError:", parseErr)
+		return // panic
+	}
+	
+	
+	// Interpret AST to value
+	resVal, interpErr := interpreter.Interpret(expr)
+	if interpErr != nil {
+		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
+		return // Panic
+	}
+	if resVal == nil {
+		fmt.Println()
+		return 
+	}
+	fmt.Printf("%v\n", resVal)
 }

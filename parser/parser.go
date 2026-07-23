@@ -14,30 +14,30 @@ func New(tokens []dt.Token) *Parser {
 	return &Parser{tokens, 0}
 }
 
-func (p *Parser) Parse() (dt.Expr, error) {
+func (p *Parser) Parse() (dt.Expr, *ParseError) {
 	if len(p.Tokens) == 1 { return &dt.End{}, nil }
 	res, err := p.expression()
 	if err != nil {
-		return res, fmt.Errorf("ParseError: %w", err)
+		return res, err
 	}
 
 	if p.peek().Type != dt.EOF {
 		endErr := &ParseError{p.peek(), fmt.Sprintf("Expected EOF, received %v", p.peek())}
-		return res, fmt.Errorf("ParseError: %w", endErr)
+		return res, endErr
 	}
 	return res, nil
 }
 
 type ParseError struct {
-	Source dt.Token
+	Token dt.Token
 	Msg string
 }
 
 func (e *ParseError) Error() string {
-	return fmt.Sprintf("In token %v, Error occured: %s", e.Source, e.Msg)
+	return e.Msg
 }
 
-func (p *Parser) expression() (dt.Expr, error) {
+func (p *Parser) expression() (dt.Expr, *ParseError) {
 	res, err := p.equality()
 	if err != nil {
 		return res, err
@@ -45,7 +45,7 @@ func (p *Parser) expression() (dt.Expr, error) {
 	return res, nil
 }
 
-func (p *Parser) equality() (dt.Expr, error) {
+func (p *Parser) equality() (dt.Expr, *ParseError) {
 	left, leftErr := p.comparison()
 	if leftErr != nil {
 		return nil, leftErr
@@ -64,7 +64,7 @@ func (p *Parser) equality() (dt.Expr, error) {
 }
 
 
-func (p *Parser) comparison() (dt.Expr, error) {
+func (p *Parser) comparison() (dt.Expr, *ParseError) {
 	left, leftErr := p.term()
 	if leftErr != nil {
 		return nil, leftErr
@@ -82,7 +82,7 @@ func (p *Parser) comparison() (dt.Expr, error) {
 	return left, nil
 }
 
-func (p *Parser) term() (dt.Expr, error) {
+func (p *Parser) term() (dt.Expr, *ParseError) {
 	left, leftErr := p.concat()
 	if leftErr != nil {
 		return nil, leftErr
@@ -100,7 +100,7 @@ func (p *Parser) term() (dt.Expr, error) {
 	return left, nil
 }
 
-func (p *Parser) concat() (dt.Expr, error) {
+func (p *Parser) concat() (dt.Expr, *ParseError) {
 	left, leftErr := p.factor()
 	if leftErr != nil {
 		return nil, leftErr
@@ -118,7 +118,7 @@ func (p *Parser) concat() (dt.Expr, error) {
 	return left, nil
 }
 
-func (p *Parser) factor() (dt.Expr, error) {
+func (p *Parser) factor() (dt.Expr, *ParseError) {
 	left, leftErr := p.unary()
 	if leftErr != nil {
 		return nil, leftErr
@@ -136,7 +136,7 @@ func (p *Parser) factor() (dt.Expr, error) {
 	return left, nil
 }
 
-func (p *Parser) unary() (dt.Expr, error) {
+func (p *Parser) unary() (dt.Expr, *ParseError) {
 	if !p.isAtEnd() && (p.match(dt.Bang) || p.match(dt.Sub)) {
 		operator := p.previous()
 		right, rightErr := p.unary()
@@ -155,7 +155,7 @@ func (p *Parser) unary() (dt.Expr, error) {
 	return prim, nil
 }
 
-func (p *Parser) primary() (dt.Expr, error) {
+func (p *Parser) primary() (dt.Expr, *ParseError) {
 	if p.isAtEnd() {
 		return nil, &ParseError{p.previous(), "Expected literal, received nothing"}
 	}
