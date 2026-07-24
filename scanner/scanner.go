@@ -139,6 +139,12 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 			if strErr != nil {
 				return errToken, strErr
 			}
+
+		case '(':
+			res = dt.Token{Type:dt.LeftParen, Line: s.curLine}
+
+		case ')':
+			res = dt.Token{Type:dt.RightParen, Line: s.curLine}
  
 		default:
 			if isDigit(c) {

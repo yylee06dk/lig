@@ -7,7 +7,7 @@ import (
 
 type Parser struct {
 	Tokens []dt.Token
-	cur int
+	cur    int
 }
 
 func New(tokens []dt.Token) *Parser {
@@ -15,7 +15,9 @@ func New(tokens []dt.Token) *Parser {
 }
 
 func (p *Parser) Parse() (dt.Expr, *ParseError) {
-	if len(p.Tokens) == 1 { return &dt.End{}, nil }
+	if len(p.Tokens) == 1 {
+		return &dt.End{}, nil
+	}
 	res, err := p.expression()
 	if err != nil {
 		return res, err
@@ -30,7 +32,7 @@ func (p *Parser) Parse() (dt.Expr, *ParseError) {
 
 type ParseError struct {
 	Token dt.Token
-	Msg string
+	Msg   string
 }
 
 func (e *ParseError) Error() string {
@@ -62,7 +64,6 @@ func (p *Parser) equality() (dt.Expr, *ParseError) {
 
 	return left, nil
 }
-
 
 func (p *Parser) comparison() (dt.Expr, *ParseError) {
 	left, leftErr := p.term()
@@ -170,6 +171,16 @@ func (p *Parser) primary() (dt.Expr, *ParseError) {
 		return &dt.Literal{true}, nil
 	} else if p.match(dt.False) {
 		return &dt.Literal{false}, nil
+	} else if p.match(dt.LeftParen) {
+		exprPtr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		err = p.consume(dt.RightParen, "Expected closing parentheses")
+		if err != nil {
+			return nil, err
+		}
+		return exprPtr, nil
 	} else {
 		return nil, &ParseError{p.peek(), fmt.Sprintf("Expected literal, received %v", p.peek())}
 		// we need to peek since no match has occured!
@@ -178,12 +189,12 @@ func (p *Parser) primary() (dt.Expr, *ParseError) {
 
 func (p *Parser) advance() dt.Token {
 	p.cur += 1
-	return p.Tokens[p.cur - 1]
+	return p.Tokens[p.cur-1]
 }
 
 func (p *Parser) isAtEnd() bool {
 	// Due to EOF token
-	return len(p.Tokens) - 1 <= p.cur
+	return len(p.Tokens)-1 <= p.cur
 }
 
 func (p *Parser) peek() dt.Token {
@@ -196,8 +207,16 @@ func (p *Parser) previous() dt.Token {
 
 func (p *Parser) match(expectType dt.Tokentype) bool {
 	if p.peek().Type == expectType {
-		p.cur += 1 
+		p.cur += 1
 		return true
 	}
 	return false
+}
+
+func (p *Parser) consume(expect dt.Tokentype, msg string) *ParseError {
+	if p.peek().Type == expect {
+		p.cur += 1
+		return nil
+	}
+	return &ParseError{p.peek(), msg}
 }

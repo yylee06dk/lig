@@ -34,10 +34,14 @@ const (
 	And
 	Or
 
+	// Stage 1.2 - user convenience
 	Error
 
+	LeftParen
+	RightParen
+
 	Skip // A hack to skipping characters
-	
+
 	Group
 	EOF
 )
@@ -90,6 +94,10 @@ func (t Tokentype) String() string {
 		return "||"
 	case Error:
 		return "Lexical Error"
+	case LeftParen:
+		return "("
+	case RightParen:
+		return ")"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}

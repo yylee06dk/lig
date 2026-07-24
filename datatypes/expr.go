@@ -29,6 +29,10 @@ type Variable struct {
 	Name string
 }
 
+type Grouping struct {
+	Inner Expr
+}
+
 func (e *End) String() string {
 	return fmt.Sprintf("END")
 }
@@ -58,8 +62,13 @@ func (u *Unary) String() string {
 	return fmt.Sprintf("[ {%v} {%v} ]", u.Operator, u.Right)
 }
 
+func (g *Grouping) String() string {
+	return fmt.Sprintf("Group[ {%v} ]", g.Inner)
+}
+
 func (_ *End) dummy() {}
 func (_ *Binary) dummy() {}
 func (_ *Literal) dummy() {}
 func (_ *Unary) dummy() {}
 func (_ *Variable) dummy() {}
+func (_ *Grouping) dummy() {}

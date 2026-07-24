@@ -197,3 +197,13 @@ return value and more. But, this makes the need of total change in the code. So 
 Finally dealed with all of the things I've aimed!!
 The biggest targets were, error handling with lines, and File as input + debug mode with flags.
 So happy to see things are working as intended... This definitely is the most loveable project in my life.
+
+## First Milestone.
+The code I've written feels like the first milestone of the project. I've nearly got every functionality jlox provides until Ch.7. It results as a nicely written 1000~ lines of 
+code, which follows idiomatic Go-like designs. 
+
+Now I've got a decision to make. I could march on to variables and scope or do some more detail-related things like ternary operators(`? :`), or multi line comments.
+But, since I'm currently thinking of this project as a subset of jlox, and I'm trying to be more concise in such manner, so I'll just let such details be implemented in a 
+later language and march on for now.
+
+
