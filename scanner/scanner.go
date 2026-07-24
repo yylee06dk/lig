@@ -87,6 +87,7 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 			if s.match('/') {
 				s.skipTilNewline()
 				res = skipToken
+				break
 			}
 			res = dt.Token{Type:dt.Div, Line: s.curLine}
 
