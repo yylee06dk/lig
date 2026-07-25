@@ -1,15 +1,15 @@
 package main
 
 import (
-	"flag"
-	"errors"
-	"io"
 	"bufio"
+	"errors"
+	"flag"
 	"fmt"
-	"os"
-	"lig/scanner"
-	"lig/parser"
+	"io"
 	"lig/interpreter"
+	"lig/parser"
+	"lig/scanner"
+	"os"
 )
 
 func main() {
@@ -78,46 +78,44 @@ func runWithDebug(src []byte) {
 				fmt.Println(err)
 			}
 		}
-		
+
 		fmt.Println("Until then, scanned this:")
-	
+
 		for i, value := range tokenSlice {
 			fmt.Printf("%v: %+v ", i, value)
 		}
 		fmt.Println()
 		return //panic-- More like, the token list is wrong, so don't parse it!
 	}
-	
+
 	fmt.Printf("Scan Result: ")
 	for _, value := range tokenSlice {
 		fmt.Printf("%+v ", value)
 	}
 	fmt.Println()
-	
+
 	// Parse to AST
 	parser := parser.New(tokenSlice)
-	expr, parseErr := parser.Parse()
-	
+	stmtSlice, parseErr := parser.Parse()
+
 	if parseErr != nil {
 		fmt.Println("[ line", parseErr.Token.Line, "]", "ParseError:", parseErr)
-		
+
 		fmt.Println("Until then, parsed this:")
-	
-		fmt.Printf("%+v\n", expr)
+
+		fmt.Printf("%+v\n", stmtSlice)
 		return // panic
 	}
-	
+
 	fmt.Printf("Parse Result: ")
-	fmt.Printf("%+v\n", expr)
-	
+	fmt.Printf("%+v\n", stmtSlice)
+
 	// Interpret AST to value
-	resVal, interpErr := interpreter.Interpret(expr)
+	interpErr := interpreter.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
 		return // Panic
 	}
-	if resVal == nil { fmt.Println() }
-	fmt.Printf("Interpret Result: %v\n", resVal)
 }
 
 func run(src []byte) {
@@ -136,26 +134,20 @@ func run(src []byte) {
 		}
 		return //panic-- More like, the token list is wrong, so don't parse it!
 	}
-	
+
 	// Parse to AST
 	parser := parser.New(tokenSlice)
-	expr, parseErr := parser.Parse()
-	
+	stmtSlice, parseErr := parser.Parse()
+
 	if parseErr != nil {
 		fmt.Println("[ line", parseErr.Token.Line, "]", "ParseError:", parseErr)
 		return // panic
 	}
-	
-	
+
 	// Interpret AST to value
-	resVal, interpErr := interpreter.Interpret(expr)
+	interpErr := interpreter.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
 		return // Panic
 	}
-	if resVal == nil {
-		fmt.Println()
-		return 
-	}
-	fmt.Printf("%v\n", resVal)
 }

@@ -5,15 +5,15 @@ import (
 )
 
 type Expr interface {
-	dummy()
+	dummyExpr()
 }
 
-type End struct {}
+type End struct{}
 
 type Binary struct {
-	Left Expr
+	Left     Expr
 	Operator Token
-	Right Expr
+	Right    Expr
 }
 
 type Literal struct {
@@ -22,7 +22,7 @@ type Literal struct {
 
 type Unary struct {
 	Operator Token
-	Right Expr
+	Right    Expr
 }
 
 type Variable struct {
@@ -42,15 +42,15 @@ func (b *Binary) String() string {
 }
 
 func (l *Literal) String() string {
-	switch v := l.Value.(type){
-		case int:
-			return fmt.Sprintf("num[%v]", l.Value)
-		case string:
-			return fmt.Sprintf("string[%s]", v)
-		case bool:
-			return fmt.Sprintf("boolean[%v]", v)
-		default:
-			return fmt.Sprintf("UnknownLiteral: %v",l. Value)
+	switch v := l.Value.(type) {
+	case int:
+		return fmt.Sprintf("num[%v]", l.Value)
+	case string:
+		return fmt.Sprintf("string[%s]", v)
+	case bool:
+		return fmt.Sprintf("boolean[%v]", v)
+	default:
+		return fmt.Sprintf("UnknownLiteral: %v", l.Value)
 	}
 }
 
@@ -66,9 +66,9 @@ func (g *Grouping) String() string {
 	return fmt.Sprintf("Group[ {%v} ]", g.Inner)
 }
 
-func (_ *End) dummy() {}
-func (_ *Binary) dummy() {}
-func (_ *Literal) dummy() {}
-func (_ *Unary) dummy() {}
-func (_ *Variable) dummy() {}
-func (_ *Grouping) dummy() {}
+func (_ *End) dummyExpr()      {}
+func (_ *Binary) dummyExpr()   {}
+func (_ *Literal) dummyExpr()  {}
+func (_ *Unary) dummyExpr()    {}
+func (_ *Variable) dummyExpr() {}
+func (_ *Grouping) dummyExpr() {}

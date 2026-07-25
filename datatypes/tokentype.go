@@ -34,6 +34,8 @@ const (
 	And
 	Or
 
+	Group
+
 	// Stage 1.2 - user convenience
 	Error
 
@@ -42,7 +44,10 @@ const (
 
 	Skip // A hack to skipping characters
 
-	Group
+	// Stage 2
+	Semicolon
+	Print
+
 	EOF
 )
 
@@ -98,6 +103,8 @@ func (t Tokentype) String() string {
 		return "("
 	case RightParen:
 		return ")"
+	case Semicolon:
+		return ";"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}

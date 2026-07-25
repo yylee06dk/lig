@@ -14,16 +14,21 @@ func New(tokens []dt.Token) *Parser {
 	return &Parser{tokens, 0}
 }
 
-func (p *Parser) Parse() (dt.Expr, *ParseError) {
-	if len(p.Tokens) == 1 {
-		return &dt.End{}, nil
-	}
-	res, err := p.expression()
-	if err != nil {
-		return res, err
+func (p *Parser) Parse() ([]dt.Stmt, *ParseError) {
+	var res []dt.Stmt
+	if p.isAtEnd() {
+		return nil, nil
 	}
 
-	if p.peek().Type != dt.EOF {
+	for !p.isAtEnd() {
+		temp, err := p.statement()
+		if err != nil {
+			return res, err
+		}
+		res = append(res, temp)
+	}
+
+	if !p.isAtEnd() {
 		endErr := &ParseError{p.peek(), fmt.Sprintf("Expected EOF, received %v", p.peek())}
 		return res, endErr
 	}
@@ -37,6 +42,31 @@ type ParseError struct {
 
 func (e *ParseError) Error() string {
 	return e.Msg
+}
+
+func (p *Parser) statement() (dt.Stmt, *ParseError) {
+	if p.match(dt.Print) {
+		return p.printStatement()
+	}
+	return p.exprStatement()
+}
+
+func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
+	res, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	err = p.consume(dt.Semicolon, "Missing semicolon")
+	return &dt.PrintStmt{res}, err
+}
+
+func (p *Parser) exprStatement() (dt.Stmt, *ParseError) {
+	res, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	err = p.consume(dt.Semicolon, "Missing semicolon")
+	return &dt.ExprStmt{res}, err
 }
 
 func (p *Parser) expression() (dt.Expr, *ParseError) {

@@ -206,4 +206,20 @@ Now I've got a decision to make. I could march on to variables and scope or do s
 But, since I'm currently thinking of this project as a subset of jlox, and I'm trying to be more concise in such manner, so I'll just let such details be implemented in a 
 later language and march on for now.
 
+### Stage 2
+Now, it is time to move on. The next stage is adding statements. Like many procedural languages, we have statements which do not interpret to values. But rather have side-effects
+In this stage we aim to add statements. I found out if my grammar looks like `code -> (statement)* EOF` then, we cannot use the current 
+form of checking the result value of just printing out the return value since statements don't return values. This means we need to 
+explicitly follow the values given by each statement then return the last-value we saw or something like that. So, now I understand
+why we had to implement a `printStmt` in the book. 
 
+###### Scanner
+I only need to add datatype Semicolon, since in this phase we don't even take a look at the grammars.
+
+###### Parser
+Need a structural re-design.
+Token list is parsed into list of trees not a single tree. A single statement is parses to a single tree.
+
+Finished with statements. For interpreter too. It rather feels a bit odd.. After the minimal structure is given, adding single
+features are sooo easy. I think this is the power of goo modularizing. Adding one function means adding one functionality. This is peek 
+coding.. Thanks to the book, I could start with a nicely structured code.
