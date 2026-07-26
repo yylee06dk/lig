@@ -8,8 +8,6 @@ type Expr interface {
 	dummyExpr()
 }
 
-type End struct{}
-
 type Binary struct {
 	Left     Expr
 	Operator Token
@@ -26,15 +24,11 @@ type Unary struct {
 }
 
 type Variable struct {
-	Name string
+	Name Token
 }
 
 type Grouping struct {
 	Inner Expr
-}
-
-func (e *End) String() string {
-	return fmt.Sprintf("END")
 }
 
 func (b *Binary) String() string {
@@ -66,7 +60,6 @@ func (g *Grouping) String() string {
 	return fmt.Sprintf("Group[ {%v} ]", g.Inner)
 }
 
-func (_ *End) dummyExpr()      {}
 func (_ *Binary) dummyExpr()   {}
 func (_ *Literal) dummyExpr()  {}
 func (_ *Unary) dummyExpr()    {}

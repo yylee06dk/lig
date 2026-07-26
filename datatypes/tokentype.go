@@ -48,6 +48,9 @@ const (
 	Semicolon
 	Print
 
+	// Stage 2.2
+	Var
+
 	EOF
 )
 
@@ -105,6 +108,10 @@ func (t Tokentype) String() string {
 		return ")"
 	case Semicolon:
 		return ";"
+	case Print:
+		return "Print"
+	case Var:
+		return "Var"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}

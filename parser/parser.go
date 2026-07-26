@@ -21,7 +21,7 @@ func (p *Parser) Parse() ([]dt.Stmt, *ParseError) {
 	}
 
 	for !p.isAtEnd() {
-		temp, err := p.statement()
+		temp, err := p.declaration()
 		if err != nil {
 			return res, err
 		}
@@ -44,6 +44,34 @@ func (e *ParseError) Error() string {
 	return e.Msg
 }
 
+func (p *Parser) declaration() (dt.Stmt, *ParseError) {
+	if p.match(dt.Var) {
+		return p.varDeclaration()
+	} else {
+		return p.statement()
+	}
+}
+
+func (p *Parser) varDeclaration() (dt.Stmt, *ParseError) {
+	var initVal dt.Expr = nil
+	err := p.consume(dt.Identifier, "Expect variable name")
+	if err != nil {
+		return nil, err
+	}
+	name := p.previous()
+
+	if p.match(dt.Equal) {
+		initVal, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = p.consume(dt.Semicolon, "Expect ';' after variable declaration")
+
+	return &dt.VarStmt{name, initVal}, err
+}
+
 func (p *Parser) statement() (dt.Stmt, *ParseError) {
 	if p.match(dt.Print) {
 		return p.printStatement()
@@ -56,7 +84,7 @@ func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
 	if err != nil {
 		return nil, err
 	}
-	err = p.consume(dt.Semicolon, "Missing semicolon")
+	err = p.consume(dt.Semicolon, "Missing semicolon1")
 	return &dt.PrintStmt{res}, err
 }
 
@@ -65,7 +93,7 @@ func (p *Parser) exprStatement() (dt.Stmt, *ParseError) {
 	if err != nil {
 		return nil, err
 	}
-	err = p.consume(dt.Semicolon, "Missing semicolon")
+	err = p.consume(dt.Semicolon, "Missing semicolon2")
 	return &dt.ExprStmt{res}, err
 }
 
@@ -196,7 +224,7 @@ func (p *Parser) primary() (dt.Expr, *ParseError) {
 	} else if p.match(dt.String) {
 		return &dt.Literal{p.previous().Value}, nil
 	} else if p.match(dt.Identifier) {
-		return &dt.Variable{p.previous().Name}, nil
+		return &dt.Variable{p.previous()}, nil
 	} else if p.match(dt.True) {
 		return &dt.Literal{true}, nil
 	} else if p.match(dt.False) {

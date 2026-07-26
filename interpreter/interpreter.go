@@ -8,39 +8,75 @@ import (
 
 var dummy any
 
-func Interpret(stmtSlice []dt.Stmt) *RuntimeError {
+type Interpreter struct {
+	CodeBlock []dt.Stmt
+	Env       *Environment
+}
+
+func NewInterpreter(codeBlk []dt.Stmt, env *Environment) *Interpreter {
+	return &Interpreter{codeBlk, env}
+}
+
+func (i *Interpreter) Interpret() *RuntimeError {
 	// Empty stmtSlice
-	if stmtSlice == nil {
+	if i.CodeBlock == nil {
 		return nil
 	}
 
-	for _, stmt := range stmtSlice {
-		switch v := stmt.(type) {
-		case *dt.PrintStmt:
-			res, err := interpretExpr(v.Expression)
-			if err != nil {
-				return err
-			}
-			fmt.Println(res)
+	return i.interpretDecl()
+}
 
-		case *dt.ExprStmt:
-			_, err := interpretExpr(v.Expression)
+func (i *Interpreter) interpretDecl() *RuntimeError {
+	for _, stmt := range i.CodeBlock {
+		switch v := stmt.(type) {
+		case *dt.VarStmt:
+			name := v.Name
+			initVal := v.Initializer
+			if initVal == nil {
+				i.Env.define(name, initVal)
+			}
+			res, err := i.interpretExpr(initVal)
 			if err != nil {
 				return err
 			}
+			i.Env.define(name, res)
 
 		default:
-			fmt.Println("Implement more statement types")
-			// Could deal with this better.. But since I'm gonna add more statements, keep it like this for now.
+			err := i.interpretStmt(stmt)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func interpretExpr(expr dt.Expr) (any, *RuntimeError) {
+func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
+	switch v := stmt.(type) {
+	case *dt.PrintStmt:
+		res, err := i.interpretExpr(v.Expression)
+		if err != nil {
+			return err
+		}
+		fmt.Println(res)
+
+	case *dt.ExprStmt:
+		_, err := i.interpretExpr(v.Expression)
+		if err != nil {
+			return err
+		}
+
+	default:
+		fmt.Println("Implement more statement types")
+		// Could deal with this better.. But since I'm gonna add more statements, keep it like this for now.
+	}
+	return nil
+}
+
+func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 	switch v := expr.(type) {
 	case *dt.Binary:
-		res, err := binary(v)
+		res, err := i.binary(v)
 		if err != nil {
 			return dummy, err
 		}
@@ -48,18 +84,28 @@ func interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 
 	case *dt.Literal:
 		// Need to deal with keywords
-		res, err := literal(v)
+		res, err := i.literal(v)
 		if err != nil {
 			return dummy, err
 		}
 		return res, nil
 
 	case *dt.Unary:
-		res, err := unary(v)
+		res, err := i.unary(v)
 		if err != nil {
 			return dummy, err
 		}
 		return res, nil
+
+	case *dt.Grouping:
+		return i.interpretExpr(v.Inner)
+
+	case *dt.Variable:
+		retVal := i.Env.get(v.Name)
+		if err, ok := retVal.(*RuntimeError); ok {
+			return dummy, err
+		}
+		return retVal, nil
 
 	default:
 		return dummy, &RuntimeError{dt.Token{}, fmt.Sprintf("RuntimeError: Unexpected expression")}
@@ -75,15 +121,15 @@ func (e *RuntimeError) Error() string {
 	return e.Msg
 }
 
-func binary(expr *dt.Binary) (any, *RuntimeError) {
+func (i *Interpreter) binary(expr *dt.Binary) (any, *RuntimeError) {
 	operator := expr.Operator.Type
 
-	left, leftErr := interpretExpr(expr.Left)
+	left, leftErr := i.interpretExpr(expr.Left)
 	if leftErr != nil {
 		return dummy, leftErr
 	}
 
-	right, rightErr := interpretExpr(expr.Right)
+	right, rightErr := i.interpretExpr(expr.Right)
 	if rightErr != nil {
 		return dummy, rightErr
 	}
@@ -119,7 +165,7 @@ func binary(expr *dt.Binary) (any, *RuntimeError) {
 		if !leftOk {
 			leftVal := leftVal.(string)
 			rightVal := rightVal.(string)
-			return strings.Compare(leftVal, rightVal) == 1, nil
+			return strings.Compare(leftVal, rightVal) != 0, nil
 		} else {
 			rightVal := rightVal.(int)
 
@@ -130,7 +176,7 @@ func binary(expr *dt.Binary) (any, *RuntimeError) {
 		if !leftOk {
 			leftVal := leftVal.(string)
 			rightVal := rightVal.(string)
-			return strings.Compare(leftVal, rightVal) == 1, nil
+			return strings.Compare(leftVal, rightVal) == 0, nil
 		} else {
 			rightVal := rightVal.(int)
 
@@ -184,11 +230,11 @@ func binary(expr *dt.Binary) (any, *RuntimeError) {
 		}
 
 	default:
-		return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown Operator: [%v]", operator)}
+		return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown binary operator: [%v]", operator)}
 	}
 }
 
-func literal(expr *dt.Literal) (any, *RuntimeError) {
+func (i *Interpreter) literal(expr *dt.Literal) (any, *RuntimeError) {
 	switch v := expr.Value.(type) {
 	case int, string, bool:
 		return v, nil
@@ -198,8 +244,8 @@ func literal(expr *dt.Literal) (any, *RuntimeError) {
 	//return 0, &RuntimeError{expr, fmt.Sprintf("UNREACHABLE!!! in literal: %v", expr)}
 }
 
-func unary(expr *dt.Unary) (any, *RuntimeError) {
-	right, rightErr := interpretExpr(expr.Right)
+func (i *Interpreter) unary(expr *dt.Unary) (any, *RuntimeError) {
+	right, rightErr := i.interpretExpr(expr.Right)
 	if rightErr != nil {
 		return dummy, rightErr
 	}

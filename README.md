@@ -223,3 +223,18 @@ Token list is parsed into list of trees not a single tree. A single statement is
 Finished with statements. For interpreter too. It rather feels a bit odd.. After the minimal structure is given, adding single
 features are sooo easy. I think this is the power of goo modularizing. Adding one function means adding one functionality. This is peek 
 coding.. Thanks to the book, I could start with a nicely structured code.
+
+### Stage 2.1 
+Now adding environments and variables. The book uses grammar like `code -> declaration* EOF` and `declaration -> varDecl | statement`
+This avoids variable declarations to be only available at top-level. This is due to the existence of the blockStmt. Like I currently don't understand why this is so.
+But, after implementing it myself, I might change!
+
+###### Interpreter
+I understand why the book had to deal with environments by making a instance of the interpreter. I first thought it is doable
+just by passing environment as an argument, but I wasw wrong. This is possible when we decide to make the interpret function 
+to a whole big function. (Easily seen when we have pattern matching in ML-like languages) But, in go we need to divide logics 
+into functions because we can, but is not recommended to use multiple nested switches/or if statements.(It looks much worse
+than nested pattern matching)
+ So, using a somewhat procedural language, I will follow the books decision.
+And the main point of the interpreter struct is that we only make a new one when we need to deal with a code block.
+A code block can be thought as the whole code, a block normally defined with curly braces.
