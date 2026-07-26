@@ -21,6 +21,11 @@ type VarStmt struct {
 	Initializer Expr // Allows nil! (Since initializer is optional)
 }
 
+type AssignStmt struct {
+	Name       Token
+	Expression Expr
+}
+
 func (e *ExprStmt) String() string {
 	return fmt.Sprintf("Stmt[ %v ]", e.Expression)
 }
@@ -33,6 +38,11 @@ func (v *VarStmt) String() string {
 	return fmt.Sprintf("Var[ %s, %v ]", v.Name.Name, v.Initializer)
 }
 
-func (p *PrintStmt) dummyStmt() {}
-func (e *ExprStmt) dummyStmt()  {}
-func (v *VarStmt) dummyStmt()   {}
+func (a *AssignStmt) String() string {
+	return fmt.Sprintf("Assign[ %s, %v ]", a.Name.Name, a.Expression)
+}
+
+func (p *PrintStmt) dummyStmt()  {}
+func (e *ExprStmt) dummyStmt()   {}
+func (v *VarStmt) dummyStmt()    {}
+func (a *AssignStmt) dummyStmt() {}

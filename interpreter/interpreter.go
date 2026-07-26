@@ -66,6 +66,13 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 			return err
 		}
 
+	case *dt.AssignStmt:
+		rightVal, err := i.interpretExpr(v.Expression)
+		if err != nil {
+			return err
+		}
+		i.Env.define(v.Name, rightVal)
+
 	default:
 		fmt.Println("Implement more statement types")
 		// Could deal with this better.. But since I'm gonna add more statements, keep it like this for now.

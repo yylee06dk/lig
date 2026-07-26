@@ -238,3 +238,12 @@ than nested pattern matching)
  So, using a somewhat procedural language, I will follow the books decision.
 And the main point of the interpreter struct is that we only make a new one when we need to deal with a code block.
 A code block can be thought as the whole code, a block normally defined with curly braces.
+
+This stage was a bit buggy due to my REPL implementation, but solved it with a global variable that holds the starting empty environment
+
+### Stage2.2 - Adding assignment
+I first had to decide if assignment is a expression or a statement. As I said above, the biggest difference between the two is if it 
+interprets to a value. If I choose it to be a statement I can't do things like `a=b=1` where it means `a = (b=1)` and `b=1` interprets to 
+value `1` and so on. (Right recursiveness is assumed) Choosing it as an expression is a C-like approach but it is error-prone. 
+such as `if (x=3)` will automatically proceed tothe then-branch in C since assignment results in a value `3` which is true in C.
+So, I decided to make it a statement.

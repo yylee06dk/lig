@@ -26,8 +26,10 @@ func main() {
 	} else if flag.NArg() == 2 {
 		path := flag.Args()[0]
 		filePtr, err := os.Open(path)
+		defer filePtr.Close()
 		if err != nil {
 			fmt.Println(err)
+			filePtr.Close()
 			os.Exit(1)
 		}
 
@@ -36,6 +38,7 @@ func main() {
 		src, readErr := io.ReadAll(fileReader) // Can be made better with unsafe(no modification ensured)
 		if readErr != nil {
 			fmt.Println(readErr)
+			filePtr.Close()
 			os.Exit(1)
 		}
 

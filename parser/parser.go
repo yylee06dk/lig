@@ -76,7 +76,7 @@ func (p *Parser) statement() (dt.Stmt, *ParseError) {
 	if p.match(dt.Print) {
 		return p.printStatement()
 	}
-	return p.exprStatement()
+	return p.assignOrExprStatement()
 }
 
 func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
@@ -84,16 +84,26 @@ func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
 	if err != nil {
 		return nil, err
 	}
-	err = p.consume(dt.Semicolon, "Missing semicolon1")
+	err = p.consume(dt.Semicolon, "Expect ';' after print Statement")
 	return &dt.PrintStmt{res}, err
 }
 
-func (p *Parser) exprStatement() (dt.Stmt, *ParseError) {
+func (p *Parser) assignOrExprStatement() (dt.Stmt, *ParseError) {
 	res, err := p.expression()
 	if err != nil {
 		return nil, err
 	}
-	err = p.consume(dt.Semicolon, "Missing semicolon2")
+
+	if p.match(dt.Equal) { // Assignment Statement located
+		if varExpr, ok := res.(*dt.Variable); ok {
+			rightExpr, err := p.expression()
+			err = p.consume(dt.Semicolon, "Expect ';' after statement")
+			return &dt.AssignStmt{varExpr.Name, rightExpr}, err
+		}
+		return nil, &ParseError{p.previous(), "Invalid assignment target"}
+	}
+
+	err = p.consume(dt.Semicolon, "Expect ';' after statement")
 	return &dt.ExprStmt{res}, err
 }
 
