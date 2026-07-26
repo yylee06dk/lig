@@ -247,3 +247,5 @@ interprets to a value. If I choose it to be a statement I can't do things like `
 value `1` and so on. (Right recursiveness is assumed) Choosing it as an expression is a C-like approach but it is error-prone. 
 such as `if (x=3)` will automatically proceed tothe then-branch in C since assignment results in a value `3` which is true in C.
 So, I decided to make it a statement.
+
+Again, adding was relatively simple, just under a hour work of just reading the code, choosing precedence then done!

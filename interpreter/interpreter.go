@@ -67,6 +67,11 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		}
 
 	case *dt.AssignStmt:
+		// Checking if assignment target is defined
+		curVal := i.Env.get(v.Name)
+		if _, ok := curVal.(*RuntimeError); ok {
+			return &RuntimeError{v.Name, fmt.Sprintf("Undeclared variable[%s] tried to be assigned", v.Name.Name)}
+		}
 		rightVal, err := i.interpretExpr(v.Expression)
 		if err != nil {
 			return err
