@@ -78,6 +78,26 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		}
 		i.Env.define(v.Name, rightVal)
 
+	case *dt.BlockStmt:
+		newEnv := NewEnvironment(i.Env)
+		newInterp := NewInterpreter(v.Statements, newEnv)
+		err := newInterp.Interpret()
+		if err != nil {
+			return err
+		}
+
+	case *dt.IfStmt:
+		condition, err := i.interpretExpr(v.Condition)
+		if err != nil {
+			return err
+		}
+		if isTruthy(condition) {
+			return i.interpretStmt(v.ThenStmt)
+		}
+		if v.ElseStmt != nil && !isTruthy(condition) {
+			return i.interpretStmt(v.ElseStmt)
+		}
+
 	default:
 		fmt.Println("Implement more statement types")
 		// Could deal with this better.. But since I'm gonna add more statements, keep it like this for now.

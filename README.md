@@ -249,3 +249,23 @@ such as `if (x=3)` will automatically proceed tothe then-branch in C since assig
 So, I decided to make it a statement.
 
 Again, adding was relatively simple, just under a hour work of just reading the code, choosing precedence then done!
+
+### Stage 2.3 - Code blocks
+Now having working environments, we need to change the update the environment as we go. 
+
+### Stage 3 - Control Flow
+Now, let's add if-then-else statements and while & for loops. 
+First, let's choose the keywords. We won't use a `then` keyword since we have statements. If every thing was an expression, everything
+should result(interpret to) a vaule. So, only having if-statements is not allowed in such languages. Because, if the condition for the 
+statement is not matched, we don't know what the value of the expression is. But, this results in very ugly code when we don't have 
+pattern matching or other types of control flow available. So, for lig, I will only use `if` & `else` keywords along with `for` and `while`
+
+Grammar :
+```
+Stmt -> IfStmt | WhileStmt | ForStmt | ~~~
+IfStmt -> "if" "(" expression ")" statement ("else" statement)?
+WhileStmt -> "while" "(" expression ")" statement
+ForStmt -> "for "(" declaration? ";" expression ";" statement? ")" statement
+```
+
+Currently finished with if-else statements. Again felt so easy. With grammar and a uniform architecture to the code, I can just easily add stuff.

@@ -26,6 +26,28 @@ type AssignStmt struct {
 	Expression Expr
 }
 
+type BlockStmt struct {
+	Statements []Stmt
+}
+
+type IfStmt struct {
+	Condition Expr
+	ThenStmt  Stmt
+	ElseStmt  Stmt // Can be nil
+}
+
+type WhileStmt struct {
+	Condition Expr
+	Code      Stmt
+}
+
+type ForStmt struct {
+	InitStmt  Stmt
+	Condition Expr
+	UpdStmt   Stmt
+	Code      Stmt
+}
+
 func (e *ExprStmt) String() string {
 	return fmt.Sprintf("Stmt[ %v ]", e.Expression)
 }
@@ -42,7 +64,17 @@ func (a *AssignStmt) String() string {
 	return fmt.Sprintf("Assign[ %s, %v ]", a.Name.Name, a.Expression)
 }
 
+func (b *BlockStmt) String() string {
+	return fmt.Sprintf("Block[ %v ]", b.Statements)
+}
+
+func (i *IfStmt) String() string {
+	return fmt.Sprintf("If[ %v, %v, %v ]", i.Condition, i.ThenStmt, i.ElseStmt)
+}
+
 func (p *PrintStmt) dummyStmt()  {}
 func (e *ExprStmt) dummyStmt()   {}
 func (v *VarStmt) dummyStmt()    {}
 func (a *AssignStmt) dummyStmt() {}
+func (b *BlockStmt) dummyStmt()  {}
+func (i *IfStmt) dummyStmt()     {}

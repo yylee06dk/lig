@@ -75,6 +75,10 @@ func (p *Parser) varDeclaration() (dt.Stmt, *ParseError) {
 func (p *Parser) statement() (dt.Stmt, *ParseError) {
 	if p.match(dt.Print) {
 		return p.printStatement()
+	} else if p.match(dt.LeftBrace) {
+		return p.blockStatement()
+	} else if p.match(dt.If) {
+		return p.ifStatement()
 	}
 	return p.assignOrExprStatement()
 }
@@ -86,6 +90,53 @@ func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
 	}
 	err = p.consume(dt.Semicolon, "Expect ';' after print Statement")
 	return &dt.PrintStmt{res}, err
+}
+
+func (p *Parser) blockStatement() (dt.Stmt, *ParseError) {
+	var res []dt.Stmt
+	for !p.isAtEnd() && p.peek().Type != dt.RightBrace {
+		temp, err := p.declaration()
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, temp)
+	}
+	err := p.consume(dt.RightBrace, "Expect closing braces")
+	if err != nil {
+		return nil, err
+	}
+	return &dt.BlockStmt{res}, nil
+}
+
+func (p *Parser) ifStatement() (dt.Stmt, *ParseError) {
+	var elseStmt dt.Stmt = nil
+	var err *ParseError
+	err = p.consume(dt.LeftParen, "Expect '(' after if")
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	err = p.consume(dt.RightParen, "Expect ')' after condition of if statement")
+	if err != nil {
+		return nil, err
+	}
+
+	thenStmt, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(dt.Else) { //Eagerly look for else-branch
+		elseStmt, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &dt.IfStmt{condition, thenStmt, elseStmt}, nil
 }
 
 func (p *Parser) assignOrExprStatement() (dt.Stmt, *ParseError) {
@@ -286,5 +337,8 @@ func (p *Parser) consume(expect dt.Tokentype, msg string) *ParseError {
 		p.cur += 1
 		return nil
 	}
-	return &ParseError{p.peek(), msg}
+	if p.cur == 0 {
+		return &ParseError{p.peek(), "private function consume has been used at the start causing error"}
+	}
+	return &ParseError{p.previous(), msg}
 }

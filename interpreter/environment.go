@@ -10,8 +10,8 @@ type Environment struct {
 	Current map[string]any
 }
 
-func NewEnvironment() *Environment {
-	return &Environment{Parent: nil, Current: make(map[string]any)}
+func NewEnvironment(parent *Environment) *Environment {
+	return &Environment{Parent: parent, Current: make(map[string]any)}
 }
 
 func (e *Environment) get(name dt.Token) any { //Bad design

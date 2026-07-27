@@ -51,6 +51,16 @@ const (
 	// Stage 2.2
 	Var
 
+	// Stage 2.3
+	LeftBrace
+	RightBrace
+
+	// Stage 3
+	If
+	Else
+	While
+	For
+
 	EOF
 )
 
@@ -112,6 +122,10 @@ func (t Tokentype) String() string {
 		return "Print"
 	case Var:
 		return "Var"
+	case LeftBrace:
+		return "{"
+	case RightBrace:
+		return "}"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}

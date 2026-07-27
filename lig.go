@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-var global *interpreter.Environment = interpreter.NewEnvironment()
+var global *interpreter.Environment = interpreter.NewEnvironment(nil)
 
 func main() {
 	// Flag processing
@@ -20,18 +20,18 @@ func main() {
 
 	flag.Parse()
 	debug := *modePtr
-	if flag.NArg() > 2 {
+	if flag.NArg() > 1 {
 		fmt.Println("Usage: lox <file_path>")
 		os.Exit(1)
-	} else if flag.NArg() == 2 {
+	} else if flag.NArg() == 1 {
 		path := flag.Args()[0]
 		filePtr, err := os.Open(path)
-		defer filePtr.Close()
 		if err != nil {
 			fmt.Println(err)
 			filePtr.Close()
 			os.Exit(1)
 		}
+		defer filePtr.Close()
 
 		fileReader := bufio.NewReader(filePtr)
 
