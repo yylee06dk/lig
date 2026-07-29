@@ -260,12 +260,61 @@ should result(interpret to) a vaule. So, only having if-statements is not allowe
 statement is not matched, we don't know what the value of the expression is. But, this results in very ugly code when we don't have 
 pattern matching or other types of control flow available. So, for lig, I will only use `if` & `else` keywords along with `for` and `while`
 
+###### Parser
 Grammar :
 ```
 Stmt -> IfStmt | WhileStmt | ForStmt | ~~~
 IfStmt -> "if" "(" expression ")" statement ("else" statement)?
 WhileStmt -> "while" "(" expression ")" statement
-ForStmt -> "for "(" declaration? ";" expression ";" statement? ")" statement
+ForStmt -> "for "(" initializer? ";" expression? ";" updater? ")" statement
 ```
 
 Currently finished with if-else statements. Again felt so easy. With grammar and a uniform architecture to the code, I can just easily add stuff.
+
+Now, let's take a look at the for statement's grammar
+First, what should we allow for the initializer?
+- variable declaration
+- assignment statements
+- expressions --> These do not have any real side-effects, but I just added them to easily code it. (assignOrExprStatement exactly covers
+the two statements above)
+
+Secondly, how should the updater look like?
+- assignment statements
+- expressions --> The same reason
+
+With this, we can easily write the grammar for `ForStmt`
+```
+initializer -> varDecl | assignStmt | expression 
+updater -> assignStmt | expression
+```
+
+And, while implementing the parser for the for statement, I had to choose if I will desugar the statement into a while
+statement. I decided to not, since in the book I already tried out desugaring, and the advantages of desugaring comes from
+optimization code written for the `while` loop can be used again for `for` loops. But in such simple language(as said in the 
+book), it doesn't have much advantages both way.
+
+###### Interpreter
+While implementing the interpreteer for while statements, I faced another subtle detail about lexical scopes. First, I tried to implement 
+it simply just like the book. But, soon found out if the `statement` of the while-grammar was a block statement, re-executing the block 
+statement over and over again will not conserve the environment. At that time, I was thinking that the environment of the iterated part
+of the `while-statement` should have a single environment that accumulates data as it goes. 
+But, I was wrong. `C` also, just kept on iterating block statements. That's becuase both semantically doesn't matter. 
+If I were to make a declaration in the iterated block, that doesn't need to be accumulated since, the declaration will happen again
+returning to the same ground.
+> Or is it?
+Then, a question arises. Actually when we code, we normally don't have variable declarations inside loops. If I were to look at the side
+effects happening by looping, why would you declare it again returning to the same ground? So, we see that `var a = 1;` is not a big
+issue if we view from the semantic perspective. But, if wee see `var a = a + 1;`, now what? Should we accumulate? What does that even mean?
+To understand this issue, we need to address some things. 
+- When are variables declared to the scope? 
+In lox, when `var a = 1;` is seen, `a` is introduced to the environment with the initializer. So, the right side is evaluated with the
+original(`a` not yet introduced) environment. But for example, `C` is different. `C` introduces the variable without checking the
+initializer. So, when `int a = 1; int a = a + 1;` is seen, this is undefined behavior since `a` in the right side of the second statement is not yet initiated, and will normally contain garbage value. On this topic, many languages chose a `C`-like approach not always
+occurring undefined behavior.(Javascript throws an ReferenceError) Or, language like `Rust` works like lox. So, the second statement will assign value 2 to `a`. And, I personally think lox & rust's aprroach is a bit better, and my code currently works this way, so I'll just let it be.
+- What is the interpreting environment of the `condition Expression`? 
+We need to interpret the condition everytime to know if we will iterate once more. So, it is very important to select this.
+For the first iteration, we will not use/can not approach the inner stuff(the code inside the while block), so we should be able to interpret right away from outer resources. Then, we can think of two cases. In the inner block we re-declare(shadowing) the resouces used in the condition expression, so that's how value updates are done. This seems a bit off. This intuitively seems like it will cause alot of unintended errors/outputs, so we should always interpret the condition with the outer environment(inner code can update the outer env by assigning values(`a = a+1;`))
+- Should the environment of inner block be accumulated?
+So, if we set the environment when evaluating the expression should be kept as the outer environment, we see that accumulation is not needed in a semantical perspective. 
+
+With this, we are finally ready to implement the interpreting mechanism of while

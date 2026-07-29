@@ -72,9 +72,19 @@ func (i *IfStmt) String() string {
 	return fmt.Sprintf("If[ %v, %v, %v ]", i.Condition, i.ThenStmt, i.ElseStmt)
 }
 
+func (w *WhileStmt) String() string {
+	return fmt.Sprintf("While[ %v, %v ]", w.Condition, w.Code)
+}
+
+func (f *ForStmt) String() string {
+	return fmt.Sprintf("For[ %v, %v, %v, %v ]", f.InitStmt, f.Condition, f.UpdStmt, f.Code)
+}
+
 func (p *PrintStmt) dummyStmt()  {}
 func (e *ExprStmt) dummyStmt()   {}
 func (v *VarStmt) dummyStmt()    {}
 func (a *AssignStmt) dummyStmt() {}
 func (b *BlockStmt) dummyStmt()  {}
 func (i *IfStmt) dummyStmt()     {}
+func (w *WhileStmt) dummyStmt()  {}
+func (f *ForStmt) dummyStmt()    {}

@@ -116,8 +116,8 @@ func runWithDebug(src []byte) {
 	fmt.Printf("%+v\n", stmtSlice)
 
 	// Interpret AST to value
-	interp := interpreter.NewInterpreter(stmtSlice, global)
-	interpErr := interp.Interpret()
+	interp := interpreter.NewInterpreter(global)
+	interpErr := interp.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
 		return // Panic
@@ -151,8 +151,8 @@ func run(src []byte) {
 	}
 
 	// Interpret AST to value
-	interp := interpreter.NewInterpreter(stmtSlice, global)
-	interpErr := interp.Interpret()
+	interp := interpreter.NewInterpreter(global)
+	interpErr := interp.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
 		return // Panic

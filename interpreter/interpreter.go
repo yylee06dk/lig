@@ -9,43 +9,23 @@ import (
 var dummy any
 
 type Interpreter struct {
-	CodeBlock []dt.Stmt
-	Env       *Environment
+	Env *Environment
 }
 
-func NewInterpreter(codeBlk []dt.Stmt, env *Environment) *Interpreter {
-	return &Interpreter{codeBlk, env}
+func NewInterpreter(env *Environment) *Interpreter {
+	return &Interpreter{env}
 }
 
-func (i *Interpreter) Interpret() *RuntimeError {
+func (i *Interpreter) Interpret(stmtSlice []dt.Stmt) *RuntimeError {
 	// Empty stmtSlice
-	if i.CodeBlock == nil {
+	if stmtSlice == nil {
 		return nil
 	}
 
-	return i.interpretDecl()
-}
-
-func (i *Interpreter) interpretDecl() *RuntimeError {
-	for _, stmt := range i.CodeBlock {
-		switch v := stmt.(type) {
-		case *dt.VarStmt:
-			name := v.Name
-			initVal := v.Initializer
-			if initVal == nil {
-				i.Env.define(name, initVal)
-			}
-			res, err := i.interpretExpr(initVal)
-			if err != nil {
-				return err
-			}
-			i.Env.define(name, res)
-
-		default:
-			err := i.interpretStmt(stmt)
-			if err != nil {
-				return err
-			}
+	for _, stmt := range stmtSlice {
+		err := i.interpretStmt(stmt)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -53,6 +33,18 @@ func (i *Interpreter) interpretDecl() *RuntimeError {
 
 func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 	switch v := stmt.(type) {
+	case *dt.VarStmt:
+		name := v.Name
+		initVal := v.Initializer
+		if initVal == nil {
+			i.Env.define(name, initVal)
+		}
+		res, err := i.interpretExpr(initVal)
+		if err != nil {
+			return err
+		}
+		i.Env.define(name, res)
+
 	case *dt.PrintStmt:
 		res, err := i.interpretExpr(v.Expression)
 		if err != nil {
@@ -76,12 +68,12 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		if err != nil {
 			return err
 		}
-		i.Env.define(v.Name, rightVal)
+		i.Env.assign(v.Name, rightVal)
 
 	case *dt.BlockStmt:
 		newEnv := NewEnvironment(i.Env)
-		newInterp := NewInterpreter(v.Statements, newEnv)
-		err := newInterp.Interpret()
+		newInterp := NewInterpreter(newEnv)
+		err := newInterp.Interpret(v.Statements)
 		if err != nil {
 			return err
 		}
@@ -96,6 +88,15 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		}
 		if v.ElseStmt != nil && !isTruthy(condition) {
 			return i.interpretStmt(v.ElseStmt)
+		}
+
+	case *dt.WhileStmt:
+		condition, err := i.interpretExpr(v.Condition)
+		for ; isTruthy(condition); condition, err = i.interpretExpr(v.Condition) {
+			if err != nil { // This checks both the first iteration and the later(after update)
+				return err
+			}
+			i.interpretStmt(v.Code)
 		}
 
 	default:

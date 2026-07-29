@@ -28,3 +28,14 @@ func (e *Environment) get(name dt.Token) any { //Bad design
 func (e *Environment) define(name dt.Token, value any) {
 	e.Current[name.Name] = value
 }
+
+func (e *Environment) assign(name dt.Token, value any) *RuntimeError {
+	if _, ok := e.Current[name.Name]; ok {
+		e.define(name, value)
+		return nil
+	}
+	if e.Parent != nil {
+		e.Parent.assign(name, value)
+	}
+	return &RuntimeError{name, fmt.Sprintf("Undeclared variable referred: %s", name.Name)}
+}

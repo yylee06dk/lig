@@ -79,6 +79,10 @@ func (p *Parser) statement() (dt.Stmt, *ParseError) {
 		return p.blockStatement()
 	} else if p.match(dt.If) {
 		return p.ifStatement()
+	} else if p.match(dt.While) {
+		return p.whileStatement()
+	} else if p.match(dt.For) {
+		return p.forStatement()
 	}
 	return p.assignOrExprStatement()
 }
@@ -137,6 +141,75 @@ func (p *Parser) ifStatement() (dt.Stmt, *ParseError) {
 	}
 
 	return &dt.IfStmt{condition, thenStmt, elseStmt}, nil
+}
+
+func (p *Parser) whileStatement() (dt.Stmt, *ParseError) {
+	var err *ParseError
+	err = p.consume(dt.LeftParen, "Expect '(' after while")
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.consume(dt.RightParen, "Expect ')' after condition of while statement")
+	if err != nil {
+		return nil, err
+	}
+
+	code, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return &dt.WhileStmt{condition, code}, nil
+}
+
+func (p *Parser) forStatement() (dt.Stmt, *ParseError) {
+	var initStmt dt.Stmt = nil
+	var condition dt.Expr = &dt.Literal{true}
+	var updStmt dt.Stmt = nil
+	var err *ParseError
+	err = p.consume(dt.LeftParen, "Expect '(' after for")
+	if err != nil {
+		return nil, err
+	}
+	if p.peek().Type != dt.Semicolon { // Initializer declaration exists
+		if p.match(dt.Var) {
+			initStmt, err = p.varDeclaration()
+		} else {
+			initStmt, err = p.assignOrExprStatement()
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	p.consume(dt.Semicolon, "Expect ';' before condition of for")
+	if p.peek().Type != dt.Semicolon { // Condition exists
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	p.consume(dt.Semicolon, "Expect ';' after condition of for")
+	if p.peek().Type != dt.RightBrace { // Exists a update statement
+		updStmt, err = p.assignOrExprStatement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	p.consume(dt.RightBrace, "Expect ')' after update statement of for")
+	code, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return &dt.ForStmt{initStmt, condition, updStmt, code}, nil
 }
 
 func (p *Parser) assignOrExprStatement() (dt.Stmt, *ParseError) {
