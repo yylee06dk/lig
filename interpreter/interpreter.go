@@ -92,11 +92,48 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 
 	case *dt.WhileStmt:
 		condition, err := i.interpretExpr(v.Condition)
+		if err != nil {
+			return err
+		}
 		for ; isTruthy(condition); condition, err = i.interpretExpr(v.Condition) {
-			if err != nil { // This checks both the first iteration and the later(after update)
+			if err != nil {
 				return err
 			}
-			i.interpretStmt(v.Code)
+			runtimeErr := i.interpretStmt(v.Code)
+			if runtimeErr != nil {
+				return runtimeErr
+			}
+		}
+
+	case *dt.ForStmt:
+		var err *RuntimeError
+		if v.InitStmt != nil {
+			err = i.interpretStmt(v.InitStmt)
+			if err != nil {
+				return err
+			}
+		}
+		condition, condErr := i.interpretExpr(v.Condition)
+		if condErr != nil {
+			return condErr
+		}
+
+		updExist := v.UpdStmt != nil
+
+		for ; isTruthy(condition); condition, condErr = i.interpretExpr(v.Condition) {
+			if condErr != nil {
+				return condErr
+			}
+			runtimeErr := i.interpretStmt(v.Code)
+			if runtimeErr != nil {
+				return runtimeErr
+			}
+			if updExist {
+				runtimeErr = i.interpretStmt(v.UpdStmt)
+				if runtimeErr != nil {
+					return runtimeErr
+				}
+			}
 		}
 
 	default:

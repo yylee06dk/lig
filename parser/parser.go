@@ -84,7 +84,7 @@ func (p *Parser) statement() (dt.Stmt, *ParseError) {
 	} else if p.match(dt.For) {
 		return p.forStatement()
 	}
-	return p.assignOrExprStatement()
+	return p.assignOrExprStatement(true)
 }
 
 func (p *Parser) printStatement() (dt.Stmt, *ParseError) {
@@ -180,7 +180,7 @@ func (p *Parser) forStatement() (dt.Stmt, *ParseError) {
 		if p.match(dt.Var) {
 			initStmt, err = p.varDeclaration()
 		} else {
-			initStmt, err = p.assignOrExprStatement()
+			initStmt, err = p.assignOrExprStatement(false)
 		}
 		if err != nil {
 			return nil, err
@@ -197,13 +197,16 @@ func (p *Parser) forStatement() (dt.Stmt, *ParseError) {
 
 	p.consume(dt.Semicolon, "Expect ';' after condition of for")
 	if p.peek().Type != dt.RightBrace { // Exists a update statement
-		updStmt, err = p.assignOrExprStatement()
+		updStmt, err = p.assignOrExprStatement(false)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	p.consume(dt.RightBrace, "Expect ')' after update statement of for")
+	err = p.consume(dt.RightParen, "Expect ')' after update statement of for")
+	if err != nil {
+		return nil, err
+	}
 	code, err := p.statement()
 	if err != nil {
 		return nil, err
@@ -212,7 +215,7 @@ func (p *Parser) forStatement() (dt.Stmt, *ParseError) {
 	return &dt.ForStmt{initStmt, condition, updStmt, code}, nil
 }
 
-func (p *Parser) assignOrExprStatement() (dt.Stmt, *ParseError) {
+func (p *Parser) assignOrExprStatement(checkSemicolon bool) (dt.Stmt, *ParseError) {
 	res, err := p.expression()
 	if err != nil {
 		return nil, err
@@ -221,13 +224,21 @@ func (p *Parser) assignOrExprStatement() (dt.Stmt, *ParseError) {
 	if p.match(dt.Equal) { // Assignment Statement located
 		if varExpr, ok := res.(*dt.Variable); ok {
 			rightExpr, err := p.expression()
-			err = p.consume(dt.Semicolon, "Expect ';' after statement")
+			if checkSemicolon {
+				err = p.consume(dt.Semicolon, "Expect ';' after assign statement")
+			} else {
+				err = nil
+			}
 			return &dt.AssignStmt{varExpr.Name, rightExpr}, err
 		}
 		return nil, &ParseError{p.previous(), "Invalid assignment target"}
 	}
 
-	err = p.consume(dt.Semicolon, "Expect ';' after statement")
+	if checkSemicolon {
+		err = p.consume(dt.Semicolon, "Expect ';' after expr statement")
+	} else {
+		err = nil
+	}
 	return &dt.ExprStmt{res}, err
 }
 
