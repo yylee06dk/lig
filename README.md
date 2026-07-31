@@ -309,8 +309,9 @@ To understand this issue, we need to address some things.
 - When are variables declared to the scope? 
 In lox, when `var a = 1;` is seen, `a` is introduced to the environment with the initializer. So, the right side is evaluated with the
 original(`a` not yet introduced) environment. But for example, `C` is different. `C` introduces the variable without checking the
-initializer. So, when `int a = 1; int a = a + 1;` is seen, this is undefined behavior since `a` in the right side of the second statement is not yet initiated, and will normally contain garbage value. On this topic, many languages chose a `C`-like approach not always
+initializer. So, when `int a = 1; int a = a + 1;` is seen, this is undefined behavior since `a` in the right side of the second statement is not yet initiated, and will normally contain garbage value. On this topic, many languages chose a `C`-like approach but not always
 occurring undefined behavior.(Javascript throws an ReferenceError) Or, language like `Rust` works like lox. So, the second statement will assign value 2 to `a`. And, I personally think lox & rust's aprroach is a bit better, and my code currently works this way, so I'll just let it be.
+--> Exact same thing is expressed in Ch.11, and lox chooses to make it an error. (I personally do think initializer should be interpreted in the original envrionment)
 - What is the interpreting environment of the `condition Expression`? 
 We need to interpret the condition everytime to know if we will iterate once more. So, it is very important to select this.
 For the first iteration, we will not use/can not approach the inner stuff(the code inside the while block), so we should be able to interpret right away from outer resources. Then, we can think of two cases. In the inner block we re-declare(shadowing) the resouces used in the condition expression, so that's how value updates are done. This seems a bit off. This intuitively seems like it will cause alot of unintended errors/outputs, so we should always interpret the condition with the outer environment(inner code can update the outer env by assigning values(`a = a+1;`))
@@ -318,3 +319,7 @@ For the first iteration, we will not use/can not approach the inner stuff(the co
 So, if we set the environment when evaluating the expression should be kept as the outer environment, we see that accumulation is not needed in a semantical perspective. 
 
 With this, we are finally ready to implement the interpreting mechanism of while
+
+Now, we encounter a very similar argument when we try to interpret for statements. And, I once more applied the same logic while interpreting it.
+The init statement is done in the outer environment which seems quite intuitive to me(you shouldn't do it inside the iterated part right?). Then, with the condition we also interpret it in the outer environment due to the reason explained above. And, the incremental statement can be done separately with the block because there is no reason to modify the inner scope variables.
+ I do think actually the updating statement can be related with the inner scope, but this would be error prone and make the code harder to read.
