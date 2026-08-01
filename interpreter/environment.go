@@ -10,7 +10,7 @@ type Environment struct {
 	Current map[string]any
 }
 
-func NewEnvironment(parent *Environment) *Environment {
+func newEnvironment(parent *Environment) *Environment {
 	return &Environment{Parent: parent, Current: make(map[string]any)}
 }
 
@@ -25,13 +25,13 @@ func (e *Environment) get(name dt.Token) any { //Bad design
 	}
 }
 
-func (e *Environment) define(name dt.Token, value any) {
-	e.Current[name.Name] = value
+func (e *Environment) define(name string, value any) {
+	e.Current[name] = value
 }
 
 func (e *Environment) assign(name dt.Token, value any) *RuntimeError {
 	if _, ok := e.Current[name.Name]; ok {
-		e.define(name, value)
+		e.define(name.Name, value)
 		return nil
 	}
 	if e.Parent != nil {

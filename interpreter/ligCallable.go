@@ -6,11 +6,7 @@ import (
 
 type callable interface {
 	arity() int
-	call(argList []any) any
-}
-
-type returnCheck interface {
-	dummyReturn()
+	call(i *Interpreter, argList []any) (any, *RuntimeError)
 }
 
 // Functions ------------------------------------------------------
@@ -25,17 +21,13 @@ func (c *closure) arity() int {
 	return len(c.paramList)
 }
 
-func (c *closure) call(interp *Interpreter, argList []dt.Expr) (any, *RuntimeError) {
-	newEnv := NewEnvironment(c.env)
-	for idx, expr := range argList {
+func (c *closure) call(interp *Interpreter, argList []any) (any, *RuntimeError) {
+	nI := NewInterpreter(c.env)
+	newEnv := nI.Env
+	for idx, value := range argList {
 		name := c.paramList[idx]
-		value, err := interp.interpretExpr(expr)
-		if err != nil {
-			return nil, err
-		}
-		newEnv.define(name, value)
+		newEnv.define(name.Name, value)
 	}
-	nI := NewInterpreter(newEnv)
 	err := nI.interpretStmt(c.code)
 	if err != nil && err.ErrToken.Type == dt.Returning {
 		return err.ErrToken.Value, nil

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	dt "lig/datatypes"
 	"strings"
+	"time"
 )
 
 var dummy any
@@ -12,7 +13,22 @@ type Interpreter struct {
 	Env *Environment
 }
 
-func NewInterpreter(env *Environment) *Interpreter {
+type clockFunc struct{}
+
+func (c *clockFunc) arity() int {
+	return 0
+}
+
+func (c *clockFunc) call(i *Interpreter, argList []any) (any, *RuntimeError) {
+	return float64(time.Now().UnixMilli()) / 1000.0, nil
+}
+
+func NewInterpreter(parent *Environment) *Interpreter {
+	env := newEnvironment(parent)
+	if parent == nil { // defining global
+		c := clockFunc{}
+		env.define("clock", &c)
+	}
 	return &Interpreter{env}
 }
 
@@ -37,18 +53,18 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		name := v.Name
 		initVal := v.Initializer
 		if initVal == nil {
-			i.Env.define(name, initVal)
+			i.Env.define(name.Name, initVal)
 		}
 		res, err := i.interpretExpr(initVal)
 		if err != nil {
 			return err
 		}
-		i.Env.define(name, res)
+		i.Env.define(name.Name, res)
 
 	case *dt.FunStmt:
 		name := v.Name
 		function := &closure{v.ParamList, v.Code, i.Env}
-		i.Env.define(name, function)
+		i.Env.define(name.Name, function)
 
 	case *dt.PrintStmt:
 		res, err := i.interpretExpr(v.Expression)
@@ -76,8 +92,7 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		i.Env.assign(v.Name, rightVal)
 
 	case *dt.BlockStmt:
-		newEnv := NewEnvironment(i.Env)
-		newInterp := NewInterpreter(newEnv)
+		newInterp := NewInterpreter(i.Env)
 		err := newInterp.Interpret(v.Statements)
 		if err != nil {
 			return err
@@ -194,10 +209,19 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 		if err != nil {
 			return nil, err
 		}
-		if closure, ok := name.(*closure); !ok {
-			return nil, &RuntimeError{v.Paren, "Expected function name"}
+
+		var res []any
+		for _, expr := range v.ArgList {
+			value, err := i.interpretExpr(expr)
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, value)
+		}
+		if closure, ok := name.(callable); !ok {
+			return nil, &RuntimeError{v.Paren, "Expected callable name"}
 		} else {
-			retVal, err := closure.call(i, v.ArgList)
+			retVal, err := closure.call(i, res)
 			if err != nil {
 				return nil, err
 			}

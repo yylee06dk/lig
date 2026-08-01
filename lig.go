@@ -12,8 +12,6 @@ import (
 	"os"
 )
 
-var global *interpreter.Environment = interpreter.NewEnvironment(nil)
-
 func main() {
 	// Flag processing
 	modePtr := flag.Bool("debug", false, "Enable debug mode")
@@ -116,7 +114,7 @@ func runWithDebug(src []byte) {
 	fmt.Printf("%+v\n", stmtSlice)
 
 	// Interpret AST to value
-	interp := interpreter.NewInterpreter(global)
+	interp := interpreter.NewInterpreter(nil)
 	interpErr := interp.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
@@ -151,7 +149,7 @@ func run(src []byte) {
 	}
 
 	// Interpret AST to value
-	interp := interpreter.NewInterpreter(global)
+	interp := interpreter.NewInterpreter(nil)
 	interpErr := interp.Interpret(stmtSlice)
 	if interpErr != nil {
 		fmt.Println("[ line", interpErr.ErrToken.Line, "]", "RuntimeError:", interpErr)
