@@ -1,12 +1,14 @@
 package datatypes
 
 var Keywords map[string]Tokentype = map[string]Tokentype{
-	"true":  True,
-	"false": False,
-	"print": Print,
-	"var":   Var,
-	"if":    If,
-	"else":  Else,
-	"while": While,
-	"for":   For,
+	"true":   True,
+	"false":  False,
+	"print":  Print,
+	"var":    Var,
+	"if":     If,
+	"else":   Else,
+	"while":  While,
+	"for":    For,
+	"fun":    Fun,
+	"return": Return,
 }

@@ -31,6 +31,12 @@ type Grouping struct {
 	Inner Expr
 }
 
+type Call struct {
+	Name    Expr
+	Paren   Token
+	ArgList []Expr
+}
+
 func (b *Binary) String() string {
 	return fmt.Sprintf("[ {%v} {%v} {%v} ]", b.Left, b.Operator, b.Right)
 }
@@ -60,8 +66,13 @@ func (g *Grouping) String() string {
 	return fmt.Sprintf("Group[ {%v} ]", g.Inner)
 }
 
+func (c *Call) String() string {
+	return fmt.Sprintf("Call [ %s | %v ]", c.Name, c.ArgList)
+}
+
 func (_ *Binary) dummyExpr()   {}
 func (_ *Literal) dummyExpr()  {}
 func (_ *Unary) dummyExpr()    {}
 func (_ *Variable) dummyExpr() {}
 func (_ *Grouping) dummyExpr() {}
+func (_ *Call) dummyExpr()     {}

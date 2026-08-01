@@ -26,7 +26,7 @@ func (i *Interpreter) Interpret(stmtSlice []dt.Stmt) *RuntimeError {
 		err := i.interpretStmt(stmt)
 		if err != nil {
 			return err
-		}
+		} // We don't check if the error is a returning error since we won't run function body here
 	}
 	return nil
 }
@@ -44,6 +44,11 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 			return err
 		}
 		i.Env.define(name, res)
+
+	case *dt.FunStmt:
+		name := v.Name
+		function := &closure{v.ParamList, v.Code, i.Env}
+		i.Env.define(name, function)
 
 	case *dt.PrintStmt:
 		res, err := i.interpretExpr(v.Expression)
@@ -136,6 +141,13 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 			}
 		}
 
+	case *dt.ReturnStmt:
+		retVal, err := i.interpretExpr(v.RetExpr)
+		if err != nil {
+			return err
+		}
+		return &RuntimeError{dt.Token{Type: dt.Returning, Value: retVal}, ""}
+
 	default:
 		fmt.Println("Implement more statement types")
 		// Could deal with this better.. But since I'm gonna add more statements, keep it like this for now.
@@ -176,6 +188,21 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 			return dummy, err
 		}
 		return retVal, nil
+
+	case *dt.Call:
+		name, err := i.interpretExpr(v.Name) // Returns closure!! (when given good code)
+		if err != nil {
+			return nil, err
+		}
+		if closure, ok := name.(*closure); !ok {
+			return nil, &RuntimeError{v.Paren, "Expected function name"}
+		} else {
+			retVal, err := closure.call(i, v.ArgList)
+			if err != nil {
+				return nil, err
+			}
+			return retVal, nil
+		}
 
 	default:
 		return dummy, &RuntimeError{dt.Token{}, fmt.Sprintf("RuntimeError: Unexpected expression")}

@@ -154,6 +154,9 @@ func (s *Scanner) scanToken() (dt.Token, error) {
 	case '}':
 		res = dt.Token{Type: dt.RightBrace, Line: s.curLine}
 
+	case ',':
+		res = dt.Token{Type: dt.Comma, Line: s.curLine}
+
 	default:
 		if isDigit(c) {
 			var numErr error

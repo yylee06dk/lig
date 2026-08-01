@@ -253,7 +253,7 @@ Again, adding was relatively simple, just under a hour work of just reading the 
 ### Stage 2.3 - Code blocks
 Now having working environments, we need to change the update the environment as we go. 
 
-### Stage 3 - Control Flow
+### Stage 3 - Control Flow - Reusing code
 Now, let's add if-then-else statements and while & for loops. 
 First, let's choose the keywords. We won't use a `then` keyword since we have statements. If every thing was an expression, everything
 should result(interpret to) a vaule. So, only having if-statements is not allowed in such languages. Because, if the condition for the 
@@ -323,3 +323,37 @@ With this, we are finally ready to implement the interpreting mechanism of while
 Now, we encounter a very similar argument when we try to interpret for statements. And, I once more applied the same logic while interpreting it.
 The init statement is done in the outer environment which seems quite intuitive to me(you shouldn't do it inside the iterated part right?). Then, with the condition we also interpret it in the outer environment due to the reason explained above. And, the incremental statement can be done separately with the block because there is no reason to modify the inner scope variables.
  I do think actually the updating statement can be related with the inner scope, but this would be error prone and make the code harder to read.
+
+### Stage 4 Adding functions - reusing code at a much higher level
+A very important feature in a langugae. Also, just like jlox we are going to impelement first-class functions, like functional paradigm languages.
+Actually I didn't expect lox to use closures! But, I'm happy to see this and implement it. Also, as the book states the issue addressed in chapter 11 would be eliminated if we started with some other language then java. Or we saw every variable declaration as a desugared form of `let x = 3 in CODE` (the splitting)
+
+###### Scanner
+Again, so simple. Just need to add tokentypes, and add the keyword used for function declaration.
+
+###### Parser
+Let's look at the grammar of declaring functions
+```
+declaration -> varDecl | funDecl | statement
+funDecl -> "fun" identifier "(" parameters? ")" BlockStatement
+parameters -> identifier ("," identifier)*
+```
+
+And, since the calling is highly desirable to produce valuees calling a function will be treated as a expression.
+Then, we need to consider its precedence. 
+Consider, `f() == 3;` then we easily see function calling has higher precedence.
+`f() >= 3`, `f() + 3`, `f() * 3`, `!f()` all show that function calling has higher precedence naturally
+So, we see that function calling has precedence between primary expressions and unary expressions.
+
+```
+unary -> ( "!" | "-") unary | call
+call -> primary ( "(" arguments? ")" )*
+arguments -> expression ( "," expression)*
+```
+
+The implementing process was just a process of realizing how good the code in the book was. The ideas presented in the book were so clever and sophisticated.
+
+###### Interpreter
+Had a hard time with error handling. Since, I needed tokens in the error struct to get the info about where the error occurred, I had to think about which token should be passed to the error. Which token represents the error seen? Also, having a metadata about the context of where I am would be very helpful to construct a more informative error message such as.. "In function <funcName>, such error occurred."
+
+Now when adding the interpret logic for the return statement, I had to make a decision. Since, I am not a big fan of exceptions and go doesn't have one, I decided that I should follow up the call satck. Luckily, the call stack for the return statement is relatively short because statements are seen before expressions. So, the real decision is, to wether check it via error return, or a explicit return value. Since, my function that interprets statements only returns `*RuntimeError`s, I decided to return a very ugly looking error.

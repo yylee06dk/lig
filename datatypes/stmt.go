@@ -48,6 +48,16 @@ type ForStmt struct {
 	Code      Stmt
 }
 
+type FunStmt struct {
+	Name      Token
+	ParamList []Token
+	Code      *BlockStmt
+}
+
+type ReturnStmt struct {
+	RetExpr Expr
+}
+
 func (e *ExprStmt) String() string {
 	return fmt.Sprintf("Stmt[ %v ]", e.Expression)
 }
@@ -80,6 +90,14 @@ func (f *ForStmt) String() string {
 	return fmt.Sprintf("For[ %v, %v, %v, %v ]", f.InitStmt, f.Condition, f.UpdStmt, f.Code)
 }
 
+func (f *FunStmt) String() string {
+	return fmt.Sprintf("Fun[ %v | %v | %v", f.Name.Name, f.ParamList, f.Code)
+}
+
+func (r *ReturnStmt) String() string {
+	return fmt.Sprintf("Return [ %v ]", r.RetExpr)
+}
+
 func (p *PrintStmt) dummyStmt()  {}
 func (e *ExprStmt) dummyStmt()   {}
 func (v *VarStmt) dummyStmt()    {}
@@ -88,3 +106,5 @@ func (b *BlockStmt) dummyStmt()  {}
 func (i *IfStmt) dummyStmt()     {}
 func (w *WhileStmt) dummyStmt()  {}
 func (f *ForStmt) dummyStmt()    {}
+func (f *FunStmt) dummyStmt()    {}
+func (r *ReturnStmt) dummyStmt() {}

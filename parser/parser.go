@@ -47,6 +47,8 @@ func (e *ParseError) Error() string {
 func (p *Parser) declaration() (dt.Stmt, *ParseError) {
 	if p.match(dt.Var) {
 		return p.varDeclaration()
+	} else if p.match(dt.Fun) {
+		return p.funDeclaration()
 	} else {
 		return p.statement()
 	}
@@ -72,6 +74,61 @@ func (p *Parser) varDeclaration() (dt.Stmt, *ParseError) {
 	return &dt.VarStmt{name, initVal}, err
 }
 
+func (p *Parser) funDeclaration() (dt.Stmt, *ParseError) {
+	var paramList []dt.Token = nil
+	err := p.consume(dt.Identifier, "Expect function name")
+	if err != nil {
+		return nil, err
+	}
+	name := p.previous()
+
+	err = p.consume(dt.LeftParen, "Expect '(' after function name")
+	if err != nil {
+		return nil, err
+	}
+
+	var expectNext bool = false
+	var errStr string
+	for !p.isAtEnd() && p.peek().Type != dt.RightParen {
+		if expectNext {
+			errStr = "Expect additional identifier as an parameter after ','"
+		} else {
+			errStr = "Expect identifier as an parameter"
+		}
+		err = p.consume(dt.Identifier, errStr)
+		if err != nil {
+			return nil, err
+		}
+		paramList = append(paramList, p.previous())
+		if p.match(dt.Comma) {
+			expectNext = true
+		} else {
+			expectNext = false
+		}
+	}
+	if expectNext {
+		return nil, &ParseError{p.peek(), "Expected additional parameter"}
+	}
+
+	err = p.consume(dt.RightParen, "Expect ')' after function parameters")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(paramList) > 128 {
+		return nil, &ParseError{p.previous(), "Cannot have more than 128 of function parameters"}
+	}
+
+	err = p.consume(dt.LeftBrace, "Expect '{' in function declaration")
+	code, err := p.blockStatement()
+	if err != nil {
+		return nil, err
+	}
+	codeBlock := code.(*dt.BlockStmt)
+
+	return &dt.FunStmt{name, paramList, codeBlock}, nil
+}
+
 func (p *Parser) statement() (dt.Stmt, *ParseError) {
 	if p.match(dt.Print) {
 		return p.printStatement()
@@ -83,6 +140,8 @@ func (p *Parser) statement() (dt.Stmt, *ParseError) {
 		return p.whileStatement()
 	} else if p.match(dt.For) {
 		return p.forStatement()
+	} else if p.match(dt.Return) {
+		return p.returnStatement()
 	}
 	return p.assignOrExprStatement(true)
 }
@@ -105,7 +164,7 @@ func (p *Parser) blockStatement() (dt.Stmt, *ParseError) {
 		}
 		res = append(res, temp)
 	}
-	err := p.consume(dt.RightBrace, "Expect closing braces")
+	err := p.consume(dt.RightBrace, "Expect closing '}'")
 	if err != nil {
 		return nil, err
 	}
@@ -213,6 +272,15 @@ func (p *Parser) forStatement() (dt.Stmt, *ParseError) {
 	}
 
 	return &dt.ForStmt{initStmt, condition, updStmt, code}, nil
+}
+
+func (p *Parser) returnStatement() (dt.Stmt, *ParseError) {
+	retExpr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	p.consume(dt.Semicolon, "Expect ';' after return")
+	return &dt.ReturnStmt{retExpr}, nil
 }
 
 func (p *Parser) assignOrExprStatement(checkSemicolon bool) (dt.Stmt, *ParseError) {
@@ -351,12 +419,55 @@ func (p *Parser) unary() (dt.Expr, *ParseError) {
 		return right, nil
 	}
 
-	prim, primErr := p.primary()
-	if primErr != nil {
-		return nil, primErr
+	call, callErr := p.call()
+	if callErr != nil {
+		return nil, callErr
 	}
 
-	return prim, nil
+	return call, nil
+}
+
+func (p *Parser) call() (dt.Expr, *ParseError) {
+	var argList []dt.Expr
+	res, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	for !p.isAtEnd() && p.match(dt.LeftParen) {
+		argList, err = p.getArgs()
+		if err != nil {
+			return nil, err
+		}
+		p.consume(dt.RightParen, "Expect ')' after function arguments")
+
+		res = &dt.Call{res, p.previous(), argList}
+	}
+
+	return res, nil
+}
+
+func (p *Parser) getArgs() ([]dt.Expr, *ParseError) {
+	var argList []dt.Expr
+
+	var expectNext bool = false
+	for !p.isAtEnd() && p.peek().Type != dt.RightParen {
+		expr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		argList = append(argList, expr)
+		if p.match(dt.Comma) {
+			expectNext = true
+		} else {
+			expectNext = false
+		}
+	}
+	if expectNext {
+		return nil, &ParseError{p.peek(), "Expected additional argument"}
+	}
+
+	return argList, nil
 }
 
 func (p *Parser) primary() (dt.Expr, *ParseError) {

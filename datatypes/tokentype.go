@@ -61,6 +61,12 @@ const (
 	While
 	For
 
+	// Stage 4
+	Fun
+	Comma
+	Return
+	Returning
+
 	EOF
 )
 
@@ -87,7 +93,7 @@ func (t Tokentype) String() string {
 	case True:
 		return "true"
 	case False:
-		return "False"
+		return "false"
 	case AddAdd:
 		return "++"
 	case Bang:
@@ -110,8 +116,6 @@ func (t Tokentype) String() string {
 		return "&&"
 	case Or:
 		return "||"
-	case Error:
-		return "Lexical Error"
 	case LeftParen:
 		return "("
 	case RightParen:
@@ -126,6 +130,22 @@ func (t Tokentype) String() string {
 		return "{"
 	case RightBrace:
 		return "}"
+	case If:
+		return "if"
+	case Else:
+		return "else"
+	case While:
+		return "while"
+	case For:
+		return "for"
+	case Fun:
+		return "fun"
+	case Comma:
+		return ","
+	case Return:
+		return "return"
+	case Error:
+		return "Lexical Error"
 	default:
 		return fmt.Sprintf("UnknownTokentype(%d)", t)
 	}
