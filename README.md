@@ -365,3 +365,6 @@ Okay, looking at my code, I do not have any rights to say something to the book.
 `var a = a;` and `{ var a = a; }`. The first one is working with the global environment, so it is not catched by the resolver and finally catched at the assign function by undefined variable. But, the second code is caught by the resolver and returns a "Can't read local variables in its own initializer". 
 - Do we allow...
 `var a; { a = a; } ` ? Very dirty code, but only looking at the top of the stack when we check if we are initializing a variable with itself, leads to allowing such code. How should I deal with it?
+
+To answer these questions, I decided to resolve the whole. And, disallow the latter type of code.
+Of course such errors can be distinguished if we move up to a function powered language like C which has a explicit entry point like the main function. However, in interpreted languages like lox such change of design is not desired. Rather we want the code to run without such boilerplate code. So, I decided to resolve everything
