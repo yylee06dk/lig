@@ -366,5 +366,6 @@ Okay, looking at my code, I do not have any rights to say something to the book.
 - Do we allow...
 `var a; { a = a; } ` ? Very dirty code, but only looking at the top of the stack when we check if we are initializing a variable with itself, leads to allowing such code. How should I deal with it?
 
-To answer these questions, I decided to resolve the whole. And, disallow the latter type of code.
+To answer these questions, I decided to resolve the whole. And, allow the latter type of code.
 Of course such errors can be distinguished if we move up to a function powered language like C which has a explicit entry point like the main function. However, in interpreted languages like lox such change of design is not desired. Rather we want the code to run without such boilerplate code. So, I decided to resolve everything
+And, for allowing `var a; { a = a; }` this looks so ugly, but I decided to let it be. Since, it is a interpreted, dynamically typed language, allowing such features lead to less errors(Is this good or bad?) and let programmers abuse this which can be seen alot, and I also did with go's initial values

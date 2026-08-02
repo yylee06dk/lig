@@ -180,12 +180,12 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 	return nil
 }
 
-func (s *scopeStack) resolveExpr(expr dt.Expr) {
+func (s *scopeStack) resolveExpr(expr dt.Expr) error {
 	switch v := expr.(type) {
 	case *dt.Variable:
 		if !s.isEmpty() {
 			if val, ok := s.peek()[v.Name.Name]; ok && val == false {
-				panic("Actually it should not panic, but for now keeping it. Needed to be fixed")
+				return fmt.Errorf("Uninitialized variable referred in its initializer")
 			}
 		}
 		s.checkPos(v, v.Name)
