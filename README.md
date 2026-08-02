@@ -357,3 +357,11 @@ The implementing process was just a process of realizing how good the code in th
 Had a hard time with error handling. Since, I needed tokens in the error struct to get the info about where the error occurred, I had to think about which token should be passed to the error. Which token represents the error seen? Also, having a metadata about the context of where I am would be very helpful to construct a more informative error message such as.. "In function <funcName>, such error occurred."
 
 Now when adding the interpret logic for the return statement, I had to make a decision. Since, I am not a big fan of exceptions and go doesn't have one, I decided that I should follow up the call satck. Luckily, the call stack for the return statement is relatively short because statements are seen before expressions. So, the real decision is, to wether check it via error return, or a explicit return value. Since, my function that interprets statements only returns `*RuntimeError`s, I decided to return a very ugly looking error.
+
+### Stage 4.1 Adding a variable resolver
+Meeting the same issue as jlox since we pass environments around as pointers, we need a variable resolver to deal with closures without untidy edges. So, most of the process was again, imitating the ides given from the book in Go. But, I got into some issues
+- Ununiform error handling
+Okay, looking at my code, I do not have any rights to say something to the book. But, jlox returns different errors for these cases:
+`var a = a;` and `{ var a = a; }`. The first one is working with the global environment, so it is not catched by the resolver and finally catched at the assign function by undefined variable. But, the second code is caught by the resolver and returns a "Can't read local variables in its own initializer". 
+- Do we allow...
+`var a; { a = a; } ` ? Very dirty code, but only looking at the top of the stack when we check if we are initializing a variable with itself, leads to allowing such code. How should I deal with it?

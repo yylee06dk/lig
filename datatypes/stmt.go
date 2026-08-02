@@ -22,8 +22,18 @@ type VarStmt struct {
 }
 
 type AssignStmt struct {
-	Name       Token
+	NameExpr   Expr
 	Expression Expr
+}
+
+func (a *AssignStmt) GetAssignable() Token { // ensured!
+	switch v := a.NameExpr.(type) {
+	case *Variable:
+		return v.Name
+
+	default:
+		panic("Assign statemnet got un-assignable name")
+	}
 }
 
 type BlockStmt struct {
@@ -71,7 +81,7 @@ func (v *VarStmt) String() string {
 }
 
 func (a *AssignStmt) String() string {
-	return fmt.Sprintf("Assign[ %s, %v ]", a.Name.Name, a.Expression)
+	return fmt.Sprintf("Assign[ %v, %v ]", a.NameExpr, a.Expression)
 }
 
 func (b *BlockStmt) String() string {

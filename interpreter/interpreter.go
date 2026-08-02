@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-var dummy any
-
 type Interpreter struct {
 	Env *Environment
 }
+
+// --------------- native function
 
 type clockFunc struct{}
 
@@ -22,6 +22,26 @@ func (c *clockFunc) arity() int {
 func (c *clockFunc) call(i *Interpreter, argList []any) (any, *RuntimeError) {
 	return float64(time.Now().UnixMilli()) / 1000.0, nil
 }
+
+// --------------- native function end
+
+// --------------- local variable resolve map
+
+var locals map[dt.Expr]int = make(map[dt.Expr]int)
+
+func SetLocals(expr dt.Expr, hop int) { // Bad design. How can I fix this? Who really needs to refer to locals?
+	locals[expr] = hop
+}
+
+func getHops(expr dt.Expr) int {
+	if hops, ok := locals[expr]; !ok {
+		return -1
+	} else {
+		return hops
+	}
+}
+
+// --------------- local variable resolve map end
 
 func NewInterpreter(parent *Environment) *Interpreter {
 	env := newEnvironment(parent)
@@ -80,16 +100,14 @@ func (i *Interpreter) interpretStmt(stmt dt.Stmt) *RuntimeError {
 		}
 
 	case *dt.AssignStmt:
-		// Checking if assignment target is defined
-		curVal := i.Env.get(v.Name)
-		if _, ok := curVal.(*RuntimeError); ok {
-			return &RuntimeError{v.Name, fmt.Sprintf("Undeclared variable[%s] tried to be assigned", v.Name.Name)}
-		}
+		// Checking if assignment target is declared
+		token := v.GetAssignable()
+
 		rightVal, err := i.interpretExpr(v.Expression)
 		if err != nil {
 			return err
 		}
-		i.Env.assign(v.Name, rightVal)
+		i.Env.assignAt(token, getHops(v.NameExpr), rightVal) // No worries about undeclared variable assigned
 
 	case *dt.BlockStmt:
 		newInterp := NewInterpreter(i.Env)
@@ -175,7 +193,7 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 	case *dt.Binary:
 		res, err := i.binary(v)
 		if err != nil {
-			return dummy, err
+			return nil, err
 		}
 		return res, nil
 
@@ -183,14 +201,14 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 		// Need to deal with keywords
 		res, err := i.literal(v)
 		if err != nil {
-			return dummy, err
+			return nil, err
 		}
 		return res, nil
 
 	case *dt.Unary:
 		res, err := i.unary(v)
 		if err != nil {
-			return dummy, err
+			return nil, err
 		}
 		return res, nil
 
@@ -198,11 +216,7 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 		return i.interpretExpr(v.Inner)
 
 	case *dt.Variable:
-		retVal := i.Env.get(v.Name)
-		if err, ok := retVal.(*RuntimeError); ok {
-			return dummy, err
-		}
-		return retVal, nil
+		return i.lookUpVar(v.Name, v)
 
 	case *dt.Call:
 		name, err := i.interpretExpr(v.Name) // Returns closure!! (when given good code)
@@ -229,8 +243,12 @@ func (i *Interpreter) interpretExpr(expr dt.Expr) (any, *RuntimeError) {
 		}
 
 	default:
-		return dummy, &RuntimeError{dt.Token{}, fmt.Sprintf("RuntimeError: Unexpected expression")}
+		return nil, &RuntimeError{dt.Token{}, fmt.Sprintf("RuntimeError: Unexpected expression")}
 	}
+}
+
+func (i *Interpreter) lookUpVar(token dt.Token, expr dt.Expr) (any, *RuntimeError) {
+	return i.Env.getAt(token, getHops(expr))
 }
 
 type RuntimeError struct {
@@ -247,17 +265,17 @@ func (i *Interpreter) binary(expr *dt.Binary) (any, *RuntimeError) {
 
 	left, leftErr := i.interpretExpr(expr.Left)
 	if leftErr != nil {
-		return dummy, leftErr
+		return nil, leftErr
 	}
 
 	right, rightErr := i.interpretExpr(expr.Right)
 	if rightErr != nil {
-		return dummy, rightErr
+		return nil, rightErr
 	}
 
 	leftVal, rightVal, runtimeErr := runtimeCheckBinary(left, right, expr)
 	if runtimeErr != nil {
-		return dummy, runtimeErr
+		return nil, runtimeErr
 	}
 
 	switch operator {
@@ -351,7 +369,7 @@ func (i *Interpreter) binary(expr *dt.Binary) (any, *RuntimeError) {
 		}
 
 	default:
-		return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown binary operator: [%v]", operator)}
+		return nil, &RuntimeError{expr.Operator, fmt.Sprintf("Unknown binary operator: [%v]", operator)}
 	}
 }
 
@@ -368,12 +386,12 @@ func (i *Interpreter) literal(expr *dt.Literal) (any, *RuntimeError) {
 func (i *Interpreter) unary(expr *dt.Unary) (any, *RuntimeError) {
 	right, rightErr := i.interpretExpr(expr.Right)
 	if rightErr != nil {
-		return dummy, rightErr
+		return nil, rightErr
 	}
 
 	rightVal, runtimeErr := runtimeCheckUnary(right, expr)
 	if runtimeErr != nil {
-		return dummy, runtimeErr
+		return nil, runtimeErr
 	}
 
 	switch expr.Operator.Type {
@@ -383,7 +401,7 @@ func (i *Interpreter) unary(expr *dt.Unary) (any, *RuntimeError) {
 	case dt.Bang:
 		return !isTruthy(rightVal), nil
 	default:
-		return dummy, &RuntimeError{expr.Operator, fmt.Sprintf("Unreachable, or you maybe added another unary operator: %v", expr)}
+		return nil, &RuntimeError{expr.Operator, fmt.Sprintf("Unreachable, or you maybe added another unary operator: %v", expr)}
 	}
 }
 

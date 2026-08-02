@@ -297,7 +297,7 @@ func (p *Parser) assignOrExprStatement(checkSemicolon bool) (dt.Stmt, *ParseErro
 			} else {
 				err = nil
 			}
-			return &dt.AssignStmt{varExpr.Name, rightExpr}, err
+			return &dt.AssignStmt{varExpr, rightExpr}, err
 		}
 		return nil, &ParseError{p.previous(), "Invalid assignment target"}
 	}
