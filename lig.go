@@ -8,6 +8,7 @@ import (
 	"io"
 	"lig/interpreter"
 	"lig/parser"
+	"lig/resolver"
 	"lig/scanner"
 	"os"
 )
@@ -113,6 +114,12 @@ func runWithDebug(src []byte) {
 	fmt.Printf("Parse Result: ")
 	fmt.Printf("%+v\n", stmtSlice)
 
+	// Resolve variables
+	resolveErr := resolver.Resolve(stmtSlice)
+	if resolveErr != nil {
+		fmt.Println(resolveErr)
+	}
+
 	// Interpret AST to value
 	interp := interpreter.NewInterpreter(nil)
 	interpErr := interp.Interpret(stmtSlice)
@@ -146,6 +153,12 @@ func run(src []byte) {
 	if parseErr != nil {
 		fmt.Println("[ line", parseErr.Token.Line, "]", "ParseError:", parseErr)
 		return // panic
+	}
+
+	// Resolve variables
+	resolveErr := resolver.Resolve(stmtSlice)
+	if resolveErr != nil {
+		fmt.Println(resolveErr)
 	}
 
 	// Interpret AST to value

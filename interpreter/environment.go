@@ -15,9 +15,12 @@ func newEnvironment(parent *Environment) *Environment {
 }
 
 func (e *Environment) ancestor(hops int) *Environment {
-	var targetEnv *Environment
-	for ; hops > 0; hops -= 1 {
-		targetEnv = e.Parent
+	var targetEnv *Environment = e
+	for i := 0; i < hops; i += 1 {
+		if e.Parent == nil {
+			panic("error ... with calculating hop counts")
+		}
+		targetEnv = targetEnv.Parent
 	}
 	return targetEnv
 }
@@ -30,26 +33,11 @@ func (e *Environment) global() *Environment {
 }
 
 func (e *Environment) getAt(name dt.Token, hops int) (any, *RuntimeError) {
-	if hops == -1 { // check if it is in global
-		global := e.global()
-		if retVal, ok := global.Current[name.Name]; !ok {
-			return nil, &RuntimeError{name, fmt.Sprintf("Undeclared variable referred: %s", name.Name)}
-		} else {
-			return retVal, nil
-		}
-	}
 	targetEnv := e.ancestor(hops)
 	return targetEnv.Current[name.Name], nil
 }
 
 func (e *Environment) assignAt(name dt.Token, hops int, value any) *RuntimeError {
-	if hops == -1 {
-		global := e.global()
-		if _, ok := global.Current[name.Name]; !ok {
-			return &RuntimeError{name, fmt.Sprintf("Tried to assign to undeclared variable: %s", name.Name)}
-		}
-		global.Current[name.Name] = value
-	}
 	targetEnv := e.ancestor(hops)
 	targetEnv.define(name.Name, value)
 	return nil
@@ -57,6 +45,16 @@ func (e *Environment) assignAt(name dt.Token, hops int, value any) *RuntimeError
 
 func (e *Environment) define(name string, value any) {
 	e.Current[name] = value
+}
+
+func (e *Environment) PrintAll(id string) {
+	fmt.Println("start", id)
+	for e.Parent != nil {
+		fmt.Println(e.Current)
+		e = e.Parent
+	}
+	fmt.Println(e.Current)
+	fmt.Println("end", id)
 }
 
 /*

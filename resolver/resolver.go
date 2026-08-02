@@ -43,10 +43,19 @@ func (s *scopeStack) isEmpty() bool {
 
 // --------------- Stack Implementation ----------------
 
-func Resolve(ast []dt.Stmt) {
+func Resolve(ast []dt.Stmt) error {
 	s := newscopeStack()
+	s.startScope() // Global. We need to define some native functions
 
-	s.resolve(ast)
+	s.declare(dt.Token{Name: "clock"})
+	s.define(dt.Token{Name: "clock"})
+
+	err := s.resolve(ast)
+	if err != nil {
+		return err
+	}
+	s.endScope()
+	return nil
 }
 
 func (s *scopeStack) resolve(ast []dt.Stmt) error {
@@ -84,13 +93,19 @@ func (s *scopeStack) checkPos(expr dt.Expr, token dt.Token) error {
 	l := len(s.items)
 	var pos = l - 1
 
+	var checkFound bool = false
 	for ; pos >= 0; pos -= 1 {
 		if val, exists := s.items[pos][token.Name]; exists {
 			if val == false {
 				return fmt.Errorf("Uninitialized variable referred: %s", token.Name)
+			} else {
+				checkFound = true
+				interpreter.SetLocals(expr, l-1-pos)
 			}
-			interpreter.SetLocals(expr, l-1-pos)
 		}
+	}
+	if !checkFound {
+		return fmt.Errorf("Undeclared variable referred: %s", token.Name)
 	}
 	return nil
 }
@@ -126,7 +141,7 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 			s.declare(param)
 			s.define(param)
 		}
-		s.resolveStmt(v.Code)
+		s.resolveStmt(v.Code) // This results as a double enclosing, which leads to un intuitive hop numbers when debugging.
 		s.endScope()
 
 	case *dt.ExprStmt:
@@ -168,8 +183,10 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 func (s *scopeStack) resolveExpr(expr dt.Expr) {
 	switch v := expr.(type) {
 	case *dt.Variable:
-		if !s.isEmpty() && s.peek()[v.Name.Name] == false {
-			panic("Actually it should not panic, but for now keeping it. Needed to be fixed")
+		if !s.isEmpty() {
+			if val, ok := s.peek()[v.Name.Name]; ok && val == false {
+				panic("Actually it should not panic, but for now keeping it. Needed to be fixed")
+			}
 		}
 		s.checkPos(v, v.Name)
 
