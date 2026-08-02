@@ -116,7 +116,10 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 		s.declare(v.Name)
 
 		if v.Initializer != nil {
-			s.resolveExpr(v.Initializer)
+			err := s.resolveExpr(v.Initializer)
+			if err != nil {
+				return err
+			}
 			s.define(v.Name)
 		}
 
@@ -124,14 +127,20 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 		s.startScope()
 
 		for _, stmt := range v.Statements {
-			s.resolveStmt(stmt)
+			err := s.resolveStmt(stmt)
+			if err != nil {
+				return err
+			}
 		}
 		s.endScope()
 
 	case *dt.AssignStmt:
 		token := v.GetAssignable()
 		s.checkPos(v.NameExpr, token)
-		s.resolveExpr(v.Expression)
+		err := s.resolveExpr(v.Expression)
+		if err != nil {
+			return err
+		}
 
 	case *dt.FunStmt:
 		s.declare(v.Name)
@@ -141,41 +150,80 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 			s.declare(param)
 			s.define(param)
 		}
-		s.resolveStmt(v.Code) // This results as a double enclosing, which leads to un intuitive hop numbers when debugging.
+		err := s.resolveStmt(v.Code) // This results as a double enclosing, which leads to un intuitive hop numbers when debugging.
+		if err != nil {
+			return err
+		}
 		s.endScope()
 
 	case *dt.ExprStmt:
-		s.resolveExpr(v.Expression)
+		err := s.resolveExpr(v.Expression)
+		if err != nil {
+			return err
+		}
 
 	case *dt.PrintStmt:
-		s.resolveExpr(v.Expression)
+		err := s.resolveExpr(v.Expression)
+		if err != nil {
+			return err
+		}
 
 	case *dt.IfStmt:
-		s.resolveExpr(v.Condition)
-		s.resolveStmt(v.ThenStmt)
+		err := s.resolveExpr(v.Condition)
+		if err != nil {
+			return err
+		}
+		err = s.resolveStmt(v.ThenStmt)
+		if err != nil {
+			return err
+		}
 		if v.ElseStmt != nil {
-			s.resolveStmt(v.ElseStmt)
+			err := s.resolveStmt(v.ElseStmt)
+			if err != nil {
+				return err
+			}
 		}
 
 	case *dt.WhileStmt:
-		s.resolveExpr(v.Condition)
-		s.resolveStmt(v.Code)
+		err := s.resolveExpr(v.Condition)
+		if err != nil {
+			return err
+		}
+		err = s.resolveStmt(v.Code)
+		if err != nil {
+			return err
+		}
 
 	case *dt.ForStmt:
 		if v.InitStmt != nil {
-			s.resolveStmt(v.InitStmt)
+			err := s.resolveStmt(v.InitStmt)
+			if err != nil {
+				return err
+			}
 		}
 
-		s.resolveExpr(v.Condition)
+		err := s.resolveExpr(v.Condition)
+		if err != nil {
+			return err
+		}
 
 		if v.UpdStmt != nil {
-			s.resolveStmt(v.UpdStmt)
+			err := s.resolveStmt(v.UpdStmt)
+			if err != nil {
+				return err
+			}
 		}
 
-		s.resolveStmt(v.Code)
+		err = s.resolveStmt(v.Code)
+		if err != nil {
+			return err
+		}
 
 	case *dt.ReturnStmt:
-		s.resolveExpr(v.RetExpr)
+		err := s.resolveExpr(v.RetExpr)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -191,23 +239,42 @@ func (s *scopeStack) resolveExpr(expr dt.Expr) error {
 		s.checkPos(v, v.Name)
 
 	case *dt.Call:
-		s.resolveExpr(v.Name)
+		err := s.resolveExpr(v.Name)
+		if err != nil {
+			return err
+		}
 		if v.ArgList != nil {
 			for _, expr := range v.ArgList {
-				s.resolveExpr(expr)
+				err := s.resolveExpr(expr)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
 	case *dt.Binary:
-		s.resolveExpr(v.Left)
-		s.resolveExpr(v.Right)
+		err := s.resolveExpr(v.Left)
+		if err != nil {
+			return err
+		}
+		err = s.resolveExpr(v.Right)
+		if err != nil {
+			return err
+		}
 
 	case *dt.Literal:
 
 	case *dt.Unary:
-		s.resolveExpr(v.Right)
+		err := s.resolveExpr(v.Right)
+		if err != nil {
+			return err
+		}
 
 	case *dt.Grouping:
-		s.resolveExpr(v.Inner)
+		err := s.resolveExpr(v.Inner)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
