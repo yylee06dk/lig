@@ -356,7 +356,7 @@ The implementing process was just a process of realizing how good the code in th
 ###### Interpreter
 Had a hard time with error handling. Since, I needed tokens in the error struct to get the info about where the error occurred, I had to think about which token should be passed to the error. Which token represents the error seen? Also, having a metadata about the context of where I am would be very helpful to construct a more informative error message such as.. "In function <funcName>, such error occurred."
 
-Now when adding the interpret logic for the return statement, I had to make a decision. Since, I am not a big fan of exceptions and go doesn't have one, I decided that I should follow up the call satck. Luckily, the call stack for the return statement is relatively short because statements are seen before expressions. So, the real decision is, to wether check it via error return, or a explicit return value. Since, my function that interprets statements only returns `*RuntimeError`s, I decided to return a very ugly looking error.
+Now when adding the interpret logic for the return statement, I had to make a decision. Since, I am not a big fan of exceptions and go doesn't have one, I decided that I should follow up the call stack. Luckily, the call stack for the return statement is relatively short because statements are seen before expressions. So, the real decision is, to whether check it via error return, or a explicit return value. Since, my function that interprets statements only returns `*RuntimeError`s, I decided to return a very ugly looking error.
 
 ### Stage 4.1 Adding a variable resolver
 Meeting the same issue as jlox since we pass environments around as pointers, we need a variable resolver to deal with closures without untidy edges. So, most of the process was again, imitating the ides given from the book in Go. But, I got into some issues
@@ -368,4 +368,6 @@ Okay, looking at my code, I do not have any rights to say something to the book.
 
 To answer these questions, I decided to resolve the whole. And, allow the latter type of code.
 Of course such errors can be distinguished if we move up to a function powered language like C which has a explicit entry point like the main function. However, in interpreted languages like lox such change of design is not desired. Rather we want the code to run without such boilerplate code. So, I decided to resolve everything
-And, for allowing `var a; { a = a; }` this looks so ugly, but I decided to let it be. Since, it is a interpreted, dynamically typed language, allowing such features lead to less errors(Is this good or bad?) and let programmers abuse this which can be seen alot, and I also did with go's initial values
+And, for allowing `var a; { a = a; }` this looks so ugly, but I decided to let it be. Since, it is a interpreted, dynamically typed language, allowing such features lead to less errors(Is this good or bad?) and let programmers abuse this which can be seen alot, which I also did with go's initial values being set.
+
+

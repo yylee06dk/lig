@@ -9,11 +9,12 @@ import (
 // --------------- Stack Implementation ----------------
 
 type scopeStack struct {
-	items []map[string]bool
+	items   []map[string]bool
+	context ContextWhere
 }
 
 func newscopeStack() *scopeStack {
-	return &scopeStack{items: nil}
+	return &scopeStack{items: nil, context: Plain}
 }
 
 func (s *scopeStack) push(val map[string]bool) {
@@ -42,6 +43,13 @@ func (s *scopeStack) isEmpty() bool {
 }
 
 // --------------- Stack Implementation ----------------
+
+type ContextWhere int
+
+const (
+	Plain ContextWhere = iota
+	Function
+)
 
 func Resolve(ast []dt.Stmt) error {
 	s := newscopeStack()
@@ -113,6 +121,11 @@ func (s *scopeStack) checkPos(expr dt.Expr, token dt.Token) error {
 func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 	switch v := stmt.(type) {
 	case *dt.VarStmt:
+		if !s.isEmpty() {
+			if _, ok := s.peek()[v.Name.Name]; ok {
+				return fmt.Errorf("Already a variable with this name in scope: %s", v.Name.Name)
+			}
+		}
 		s.declare(v.Name)
 
 		if v.Initializer != nil {
@@ -143,9 +156,12 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 		}
 
 	case *dt.FunStmt:
+		// Declare and define function name
 		s.declare(v.Name)
 		s.define(v.Name)
 		s.startScope()
+		currentContext := s.context
+		s.context = Function
 		for _, param := range v.ParamList {
 			s.declare(param)
 			s.define(param)
@@ -154,6 +170,7 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 		if err != nil {
 			return err
 		}
+		s.context = currentContext
 		s.endScope()
 
 	case *dt.ExprStmt:
@@ -220,6 +237,9 @@ func (s *scopeStack) resolveStmt(stmt dt.Stmt) error {
 		}
 
 	case *dt.ReturnStmt:
+		if s.context == Plain {
+			return fmt.Errorf("Cannot use return outside of function/method declaration")
+		}
 		err := s.resolveExpr(v.RetExpr)
 		if err != nil {
 			return err
